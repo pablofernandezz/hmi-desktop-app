@@ -26,9 +26,9 @@ Este repositorio contiene:
 
 ## Miembros del equipo:
 
-- Apellido1 Apellido2, Nombre : github username : udc username : role
-- Apellido1 Apellido2, Nombre : github username : udc username : role
-- Apellido1 Apellido2, Nombre : github username : udc username : role
+- Fernández Martí Pablo : PabloFernandezMarti : pablo.fernandez@udc.es : administrador
+- Domínguez Souto Nicolás : nikkodominguez : nicolas.dominguez@udc.es : curador
+- Ramos Carro Joel : joelramos05 : joel.ramosc@udc.es : analista
 
 
 ## Pasos para realizar la práctica
