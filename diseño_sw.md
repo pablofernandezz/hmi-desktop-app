@@ -1,6 +1,6 @@
 # Diseño de Software: SplitWithMe
 
-## 1. Patrón Arquitectónico: Model-View-Presenter (MVP)
+## **1. Patrón Arquitectónico: Model-View-Presenter (MVP)**
 
 Para esta aplicación hemos optado por el patrón **Model-View-Presenter (MVP)**. Lo elegimos porque nos permite separar la lógica de la aplicación de la interfaz de usuario, lo que hace que las interfaces sean más simples y el código mucho más fácil de mantener.
 
@@ -24,7 +24,7 @@ Para esta aplicación hemos optado por el patrón **Model-View-Presenter (MVP)**
 
 ---
 
-## 2. Diseño Estático (Diagrama de Clases)
+## **2. Diseño Estático (Diagrama de Clases)**
 
 El siguiente diagrama UML muestra las clases principales de la aplicación y cómo se relacionan entre sí dentro de la arquitectura MVP.
 
@@ -85,12 +85,13 @@ classDiagram
 ```
 ---
 
-## 3. Diseño Dinámico (Diagramas de Secuencia)
+## **3. Diseño Dinámico (Diagramas de Secuencia)**
 
-Estos diagramas ilustran la colaboración entre los objetos para llevar a cabo los casos de uso principales. En esta fase inicial, las operaciones se modelan de forma síncrona.
-1️⃣ Añadir un Gasto
+Estos diagramas ilustran la colaboración entre los objetos para llevar a cabo los casos de uso principales.
 
-Objetivo: Mostrar cómo el usuario ingresa los datos de un gasto, se asignan amigos y se guarda en el servidor.
+### **3.1 Añadir un Gasto Nuevo**
+
+Objetivo: Mostrar cómo el usuario ingresa los datos de un gasto, se asignan amigos y se guarda.
 
 ```mermaid
 sequenceDiagram
@@ -98,45 +99,191 @@ sequenceDiagram
     participant View
     participant Presenter
     participant Model
-    participant Server
 
     User->>View: Clica botón "Añadir Gasto"
     View->>Presenter: on_add_expense_clicked()
-    Presenter->>View: show_add_expense_dialog()
-
+    
+    Presenter->>Model: get_friends()
+    activate Model
+    Model-->>Presenter: devuelve lista_de_amigos
+    deactivate Model
+    
+    Presenter->>View: show_add_expense_dialog(lista_de_amigos)
+    activate View
+    View-->>User: Muestra diálogo para añadir gasto
+    deactivate View
+    
     User->>View: Rellena datos y clica "Confirmar"
     View->>Presenter: on_confirm_add_expense()
-    activate Presenter
-    Presenter->>View: get_expense_form_data()
-    View-->>Presenter: devuelve datos del formulario
+    
+    Presenter->>View: get_expense_dialog_data()
+    activate View
+    View-->>Presenter: devuelve datos_del_gasto
+    deactivate View
+    
+    Presenter->>View: show_loading(True)
+    
+    Presenter->>Model: add_expense(datos_del_gasto)
+    activate Model
+    Model-->>Presenter: devuelve resultado_operacion
+    deactivate Model
+    
+    Presenter->>Model: get_expenses()
+    activate Model
+    Model-->>Presenter: devuelve lista_actualizada
+    deactivate Model
+    
+    Presenter->>View: update_expense_list(lista_actualizada)
+    Presenter->>View: show_loading(False)
+```
+
+### **3.2 Añadir un Gasto Nuevo**
+
+Objetivo: Mostrar cómo el usuario selecciona un gasto y la aplicación muestra su información detallada.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant View
+    participant Presenter
+    participant Model
+
+    User->>View: Selecciona un gasto y clica "Ver Detalles"
+    View->>Presenter: on_view_details_clicked(gasto_id)
+
     Presenter->>View: show_loading(True)
 
-    Presenter->>Model: add_expense(data)
+    Presenter->>Model: get_expense_details(gasto_id)
     activate Model
-    Model->>Server: POST /expenses (data)
-    activate Server
-
-    alt Petición Exitosa
-        Server-->>Model: 201 Created (new_expense)
-        Model-->>Presenter: on_add_success(new_expense)
-        
-        Note right of Presenter: Se recargan los gastos para refrescar la lista.
-        Presenter->>Model: get_expenses()
-        Model->>Server: GET /expenses
-        Server-->>Model: 200 OK (updated_list)
-        Model-->>Presenter: on_expenses_reloaded(updated_list)
-        
-        Presenter->>View: update_expense_list(updated_list)
-        Presenter->>View: close_add_expense_dialog()
-
-    else Error del Servidor
-        Server-->>Model: 4xx/5xx Error (error_details)
-        Model-->>Presenter: on_add_error(error_details)
-        Presenter->>View: show_error_dialog("Error: No se pudo añadir el gasto.")
-    end
-    deactivate Server
+    Model-->>Presenter: devuelve detalles_del_gasto
     deactivate Model
 
+    Presenter->>View: show_expense_details_dialog(detalles_del_gasto)
     Presenter->>View: show_loading(False)
-    deactivate Presenter
+```
+
+#### **3.3 Modificar Datos de un Gasto**
+
+**Objetivo:** Mostrar el flujo para editar un gasto existente, desde la selección hasta el guardado de los cambios.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant View
+    participant Presenter
+    participant Model
+
+    User->>View: Selecciona un gasto y clica "Modificar"
+    View->>Presenter: on_modify_expense_clicked(gasto_id)
+
+    Presenter->>View: show_loading(True)
+
+    Presenter->>Model: get_expense_details(gasto_id)
+    activate Model
+    Model-->>Presenter: devuelve datos_actuales_gasto
+    deactivate Model
+
+    Presenter->>Model: get_friends()
+    activate Model
+    Model-->>Presenter: devuelve lista_de_amigos
+    deactivate Model
+
+    Presenter->>View: show_modify_expense_dialog(datos_actuales_gasto, lista_de_amigos)
+    Presenter->>View: show_loading(False)
+    
+    User->>View: Modifica datos y clica "Confirmar"
+    View->>Presenter: on_confirm_modify_expense(gasto_id)
+
+    Presenter->>View: get_expense_dialog_data()
+    activate View
+    View-->>Presenter: devuelve datos_modificados
+    deactivate View
+
+    Presenter->>View: show_loading(True)
+
+    Presenter->>Model: update_expense(gasto_id, datos_modificados)
+    activate Model
+    Model-->>Presenter: devuelve resultado_operacion
+    deactivate Model
+
+    Presenter->>Model: get_expenses()
+    activate Model
+    Model-->>Presenter: devuelve lista_actualizada
+    deactivate Model
+
+    Presenter->>View: update_expense_list(lista_actualizada)
+    Presenter->>View: show_loading(False)
+```
+
+### **3.4. Eliminar un Gasto**
+
+Objetivo: Mostrar el proceso de eliminación de un gasto, incluyendo el paso de confirmación por parte del usuario.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant View
+    participant Presenter
+    participant Model
+
+    User->>View: Selecciona un gasto y clica "Eliminar"
+    View->>Presenter: on_delete_expense_clicked(gasto_id)
+
+    Presenter->>View: show_confirm_delete_dialog("¿Estás seguro?")
+    
+    alt Usuario confirma
+        User->>View: Clica "Sí"
+        View->>Presenter: on_confirm_delete(gasto_id)
+
+        Presenter->>View: show_loading(True)
+
+        Presenter->>Model: delete_expense(gasto_id)
+        activate Model
+        Model-->>Presenter: devuelve resultado_operacion
+        deactivate Model
+
+        Presenter->>Model: get_expenses()
+        activate Model
+        Model-->>Presenter: devuelve lista_actualizada
+        deactivate Model
+
+        Presenter->>View: update_expense_list(lista_actualizada)
+        Presenter->>View: show_loading(False)
+
+    else Usuario cancela
+        User->>View: Clica "No"
+        Note over View, Presenter: El diálogo se cierra. Fin del caso de uso.
+    end
+```
+
+### **3.5. Ver Detalles de un Amigo**
+
+Objetivo: Mostrar cómo el usuario selecciona un amigo para ver su información detallada, como su balance y los gastos en los que participa.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant View
+    participant Presenter
+    participant Model
+
+    User->>View: Selecciona un amigo de la lista
+    View->>Presenter: on_friend_selected(amigo_id)
+
+    Presenter->>View: show_loading(True)
+
+    Presenter->>Model: get_friend_details(amigo_id)
+    activate Model
+    Note right of Model: Petición a GET /friends/{id}
+    Model-->>Presenter: devuelve detalles_del_amigo
+    deactivate Model
+
+    Presenter->>Model: get_expenses_for_friend(amigo_id)
+    activate Model
+    Note right of Model: Petición a GET /friends/{id}/expenses
+    Model-->>Presenter: devuelve gastos_del_amigo
+    deactivate Model
+
+    Presenter->>View: update_friend_details_panel(detalles_del_amigo, gastos_del_amigo)
+    Presenter->>View: show_loading(False)
 ```
