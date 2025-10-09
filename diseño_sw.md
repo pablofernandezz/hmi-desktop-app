@@ -82,8 +82,17 @@ classDiagram
     Model ..> Friend : creates
     Expense "0..*" -- "0..*" Friend : involved
 
+```
+---
 
+## 3. Diseño Dinámico (Diagramas de Secuencia)
 
+Estos diagramas ilustran la colaboración entre los objetos para llevar a cabo los casos de uso principales. En esta fase inicial, las operaciones se modelan de forma síncrona.
+1️⃣ Añadir un Gasto
+
+Objetivo: Mostrar cómo el usuario ingresa los datos de un gasto, se asignan amigos y se guarda en el servidor.
+
+```mermaid
 sequenceDiagram
     actor User
     participant View
@@ -130,3 +139,4 @@ sequenceDiagram
 
     Presenter->>View: show_loading(False)
     deactivate Presenter
+```
