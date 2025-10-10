@@ -4,7 +4,7 @@ import requests
 ### Modelos de datos
 class Gasto:
     # CAMBIO AQUÍ: 'friends' es ahora opcional
-    def __init__(self, id, description, amount, date, credit_balance, num_friends, friends=None):
+    def __init__(self, id, description, amount, date=None, credit_balance=0, num_friends=0, friends=None, **kwargs):
         self.id = id 
         self.description = description
         self.amount = amount
@@ -33,7 +33,7 @@ class Model:
         self.api_url = "http://127.0.0.1:8000"
 
     def get_gastos(self):
-        print("MODELO: Obteniendo gastos desde el servidor")
+        print("MODELO: Obteniendo gastos desde el servidor...")
         try:
             response = requests.get(f"{self.api_url}/expenses")
             response.raise_for_status()
@@ -43,8 +43,19 @@ class Model:
             print(f"MODELO: {len(gastos)} gastos obtenidos.")
             return gastos
         except requests.exceptions.RequestException as e:
-            print(f"MODELO: Error al conectar con el servidor: {e}")
+            print(f"MODELO: Error al obtener lista de gastos: {e}")
             return []
+        
+    def get_gasto_details(self, gasto_id: int):
+        print(f"MODELO: Obteniendo detalles del gasto {gasto_id} desde el servidor...")
+        try:
+            response=requests.get(f"{self.api_url}/expenses/{gasto_id}")
+            response.raise_for_status()
+            return Gasto(**response.json())
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al obtener detalles del gasto {gasto_id}: {e}")
+            return None
+
 
     def get_amigos(self):
         print("MODELO: Obteniendo amigos desde el servidor...")
@@ -57,5 +68,26 @@ class Model:
             print(f"MODELO: {len(amigos)} amigos obtenidos.")
             return amigos
         except requests.exceptions.RequestException as e:
-            print(f"MODELO: Error al conectar con el servidor: {e}")
+            print(f"MODELO: Error al obtener lista de amigos: {e}")
+            return []
+        
+    def get_amigo_details(self, amigo_id: int):
+        print(f"MODELO: Obteniendo detalles del amigo {amigo_id} desde el servidor...")
+        try:
+            response = requests.get(f"{self.api_url}/friends/{amigo_id}")
+            response.raise_for_status()
+            return Amigo(**response.json())
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al obtener detalles del amigo {amigo_id}: {e}")
+            return None
+        
+    def get_gastos_por_amigo(self, amigo_id: int):
+        print(f"MODELO: Obteniendo gastos asociados a amigo {amigo_id} desde el servidor...")
+        try:
+            response = requests.get(f"{self.api_url}/friends/{amigo_id}/expenses")
+            response.raise_for_status()
+            gastos_json = response.json()
+            return [Gasto(**gasto_data) for gasto_data in gastos_json]
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al obtener gastos del amigo {amigo_id}: {e}")
             return []

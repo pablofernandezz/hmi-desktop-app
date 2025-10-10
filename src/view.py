@@ -1,8 +1,8 @@
-# view.py (CORREGIDO Y MEJORADO)
+# view.py
 
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 from typing import List, Optional
 
 # Importamos las clases de datos para que el editor nos ayude (type hinting)
@@ -70,6 +70,8 @@ class DialogoGasto(Gtk.Dialog):
             "friends_ids": amigos_seleccionados
         }
 
+
+
 class VistaPrincipal(Gtk.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -86,6 +88,9 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         overlay = Gtk.Overlay()
         self.set_child(overlay)
         self.spinner = Gtk.Spinner(spinning=False, visible=False)
+        self.spinner.set_halign(Gtk.Align.CENTER)
+        self.spinner.set_valign(Gtk.Align.CENTER)
+        self.spinner.set_size_request(50, 50)
         overlay.add_overlay(self.spinner)
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -130,25 +135,28 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         # Hacemos la ventana principal no-interactiva mientras carga
         self.get_child().get_child().set_sensitive(not is_loading)
 
+
     def mostrar_gastos(self, gastos: List[Gasto]):
         while (child := self.lista_gastos.get_row_at_index(0)):
             self.lista_gastos.remove(child)
-
         for gasto in gastos:
             row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=5, margin_bottom=5)
-            
             # CORRECCIÓN: Usamos 'description' y 'amount'
             info_label = Gtk.Label(label=f"{gasto.description}\n{gasto.amount:.2f}€", xalign=0, hexpand=True)
             
             buttons_box = Gtk.Box(spacing=5)
+
+            details_button = Gtk.Button(label="Detalles")
+            details_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_details_gasto_clicked(g_id))
+
             modify_button = Gtk.Button(label="Modificar")
-            # La lambda captura el id del gasto para esta fila específica
             modify_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_modify_gasto_clicked(g_id))
             
             delete_button = Gtk.Button(label="Eliminar")
             delete_button.get_style_context().add_class("destructive-action")
             delete_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_delete_gasto_clicked(g_id))
 
+            buttons_box.append(details_button)
             buttons_box.append(modify_button)
             buttons_box.append(delete_button)
 
@@ -157,18 +165,71 @@ class VistaPrincipal(Gtk.ApplicationWindow):
             
             self.lista_gastos.append(row_box)
 
+
     def mostrar_amigos(self, amigos: List[Amigo]):
         while (child := self.lista_amigos.get_row_at_index(0)):
             self.lista_amigos.remove(child)
 
         for amigo in amigos:
-            # CORRECCIÓN: Usamos 'amigo.name'
-            label = Gtk.Label(label=f"{amigo.name} (Saldo: {amigo.saldo:.2f}€)", xalign=0)
-            self.lista_amigos.append(label)
+            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=5, margin_bottom=5)
+            label = Gtk.Label(label=f"{amigo.name}\nSaldo: {amigo.saldo:.2f}€", xalign=0, hexpand=True)
+            details_button = Gtk.Button(label="Detalles")
+            details_button.connect('clicked', lambda w, a_id=amigo.id: self.presenter.on_details_amigo_clicked(a_id))
+            
+            row_box.append(label)
+            row_box.append(details_button)
+            self.lista_amigos.append(row_box)
+
+
+    def show_gasto_details(self, gasto: Gasto):
+        dialog=Gtk.MessageDialog(
+            transient_for=self,
+            modal=True,
+            message_type=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.OK,
+            text=f"Detalles del Gasto ID {gasto.description}",
+        )
+        details = (
+            f"<b>ID:</b> {gasto.id}\n"
+            f"<b>Importe:</b> {gasto.amount:.2f}€\n"
+            f"<b>Fecha:</b> {gasto.date}\n"
+            f"<b>Nº de amigos:</b> {gasto.num_friends}"
+        )
+        dialog.set_property("secondary_text", details)
+        dialog.set_property("secondary_use_markup", True)
+        dialog.connect("response", lambda d, response_id: d.destroy())
+        dialog.present()
+
+
+    def show_amigo_details(self, amigo: Amigo, gastos_asociados: List[Gasto]):
+        dialog = Gtk.MessageDialog(
+            transient_for=self,
+            modal=True,
+            message_type=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.OK,
+            text=f"Detalles del Amigo {amigo.name}",
+        )
+        gastos_str = "\n".join([f"- {gasto.description}: {gasto.amount:.2f}€" for gasto in gastos_asociados])
+        if not gastos_str:
+            gastos_str = "No participa en ningún gasto."
+
+        details = (
+            f"<b>ID:</b> {amigo.id}\n"
+            f"<b>Saldo:</b> {amigo.saldo:.2f}€\n"
+            f"<b>Crédito:</b> {amigo.credit_balance:.2f}€\n"
+            f"<b>Débito:</b> {amigo.debit_balance:.2f}€\n"
+            f"<b><u>Gastos en los que participa:</u></b>\n{gastos_str}"
+        )
+        dialog.set_property("secondary_text", details)
+        dialog.set_property("secondary_use_markup", True)
+        dialog.connect("response", lambda d, response_id: d.destroy())
+        dialog.present()
+
 
     def mostrar_dialogo_gasto(self, amigos: List[Amigo], gasto_existente: Optional[Gasto] = None) -> DialogoGasto:
         dialog = DialogoGasto(self, amigos, gasto_existente)
         return dialog
+
 
     def show_confirm_delete_dialog(self, gasto_id: int):
         dialog = Gtk.MessageDialog(
@@ -181,10 +242,13 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         dialog.connect("response", lambda d, response_id: self._on_delete_dialog_response(d, response_id, gasto_id))
         dialog.present()
 
+
     def _on_delete_dialog_response(self, dialog, response_id, gasto_id):
         dialog.destroy()
         if response_id == Gtk.ResponseType.YES:
             self.presenter.on_confirm_delete(gasto_id)
+
+
 
 class App(Gtk.Application):
     def __init__(self, modelo, **kwargs):
