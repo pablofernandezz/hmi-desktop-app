@@ -1,7 +1,10 @@
+# view.py (CORREGIDO)
+
 import gi 
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk 
-from presenter import Presenter
+# La vista no debería importar al Presenter directamente para evitar dependencias circulares
+# from presenter import Presenter
 
 class VistaPrincipal(Gtk.ApplicationWindow):
     def __init__(self, **kwargs):
@@ -53,21 +56,21 @@ class VistaPrincipal(Gtk.ApplicationWindow):
             self.lista_gastos.remove(child)
 
         for gasto in gastos:
-
             row = Gtk.Box(orientation = Gtk.Orientation.HORIZONTAL, spacing = 50)
-            label_desc = Gtk.Label(label = gasto.descripcion)
-            label_importe = Gtk.Label(label = f"{gasto.importe: .2f}€")
+            # CORRECCIÓN AQUÍ: Usamos 'description' y 'amount'
+            label_desc = Gtk.Label(label = gasto.description)
+            label_importe = Gtk.Label(label = f"{gasto.amount:.2f}€")
             row.append(label_desc)
             row.append(label_importe)
             self.lista_gastos.append(row)
 
     def mostrar_amigos(self, amigos):
-
         while child := self.lista_amigos.get_first_child():
             self.lista_amigos.remove(child)
 
         for amigo in amigos:
-            label = Gtk.Label(label = f"{amigo.nombre}  (Saldo: {amigo.saldo: .2f}€)")
+            # CORRECCIÓN AQUÍ: Usamos 'name'
+            label = Gtk.Label(label = f"{amigo.name}  (Saldo: {amigo.saldo:.2f}€)")
             self.lista_amigos.append(label)
 
 class App(Gtk.Application):
@@ -77,6 +80,8 @@ class App(Gtk.Application):
         self.win = None 
 
     def do_activate(self):
+        # Importamos el Presenter aquí para evitar dependencias circulares
+        from presenter import Presenter
         if not self.win:
             self.win = VistaPrincipal(application = self)
             presentador = Presenter(self.win, self.modelo)

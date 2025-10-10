@@ -1,3 +1,4 @@
+# presenter.py
 class Presenter:
     def __init__(self, vista, modelo):
         self.vista = vista

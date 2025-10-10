@@ -1,35 +1,61 @@
+# model.py 
+import requests
+
+### Modelos de datos
 class Gasto:
-    def __init__(self, id, descripcion, importe):
+    # CAMBIO AQUÍ: 'friends' es ahora opcional
+    def __init__(self, id, description, amount, date, credit_balance, num_friends, friends=None):
         self.id = id 
-        self.descripcion = descripcion
-        self.importe = importe
+        self.description = description
+        self.amount = amount
+        self.date = date
+        self.credit_balance = credit_balance
+        self.num_friends = num_friends
+        # Si no se pasan amigos, se inicializa como una lista vacía
+        self.friends = friends if friends is not None else []
 
 class Amigo: 
-    def __init__(self, id, nombre, saldo):
+    # CAMBIO AQUÍ: Los parámetros ahora coinciden con la API
+    def __init__(self, id, name, credit_balance, debit_balance):
         self.id = id 
-        self.nombre = nombre
-        self.saldo = saldo
+        self.name = name
+        self.credit_balance = credit_balance
+        self.debit_balance = debit_balance
 
+    @property
+    def saldo(self):
+        return self.credit_balance - self.debit_balance
+
+
+### Clase de lógica de negocio
 class Model: 
+    def __init__(self):
+        self.api_url = "http://127.0.0.1:8000"
 
     def get_gastos(self):
-        print("MODELO: Obteniendo gastos...")
-
-        gastos_prueba = [
-            Gasto(1, "Cena equipo", 50.0),
-            Gasto(2, "Viaje Madrid", 100.0),
-            Gasto(3, "Compra supermercado", 80.0),
-            Gasto(4, "Entradas partido", 40.0),
-        ]
-        return gastos_prueba
+        print("MODELO: Obteniendo gastos desde el servidor")
+        try:
+            response = requests.get(f"{self.api_url}/expenses")
+            response.raise_for_status()
+            gastos_json = response.json()
+            
+            gastos = [Gasto(**gasto_data) for gasto_data in gastos_json]
+            print(f"MODELO: {len(gastos)} gastos obtenidos.")
+            return gastos
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al conectar con el servidor: {e}")
+            return []
 
     def get_amigos(self):
-        print("MODELO: Obteniendo amigos...")
+        print("MODELO: Obteniendo amigos desde el servidor...")
+        try:
+            response = requests.get(f"{self.api_url}/friends")
+            response.raise_for_status()
+            amigos_json = response.json()
 
-        amigos_prueba = [
-            Amigo(1, "Pablo", 20.0),
-            Amigo(2, "Joel", 15.5),
-            Amigo(3, "Nico", 12.0),
-            Amigo(4, "Sebastian", 6.75),
-        ]
-        return amigos_prueba
+            amigos = [Amigo(**amigo_data) for amigo_data in amigos_json]
+            print(f"MODELO: {len(amigos)} amigos obtenidos.")
+            return amigos
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al conectar con el servidor: {e}")
+            return []
