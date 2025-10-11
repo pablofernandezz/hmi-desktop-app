@@ -1,11 +1,10 @@
-# view.py
+# src/view.py (Versión Final con Icono de Añadir MÁS GRANDE)
 
 import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, GLib
 from typing import List, Optional
 
-# Importamos las clases de datos para que el editor nos ayude (type hinting)
 from model import Gasto, Amigo
 
 class DialogoGasto(Gtk.Dialog):
@@ -19,18 +18,13 @@ class DialogoGasto(Gtk.Dialog):
         else:
             self.set_title("Añadir Gasto")
 
-        self.add_buttons(
-            "_Cancelar", Gtk.ResponseType.CANCEL,
-            "_Aceptar", Gtk.ResponseType.OK
-        )
-
+        self.add_buttons("_Cancelar", Gtk.ResponseType.CANCEL, "_Aceptar", Gtk.ResponseType.OK)
         self.amigos_checkboxes = {}
 
         content_area = self.get_content_area()
         grid = Gtk.Grid(margin_start=10, margin_end=10, margin_top=10, margin_bottom=10, row_spacing=10, column_spacing=10)
         content_area.append(grid)
 
-        # --- Widgets que se muestran SIEMPRE ---
         grid.attach(Gtk.Label(label="Descripción:"), 0, 0, 1, 1)
         self.entry_desc = Gtk.Entry()
         grid.attach(self.entry_desc, 1, 0, 1, 1)
@@ -40,9 +34,7 @@ class DialogoGasto(Gtk.Dialog):
         self.entry_importe.set_digits(2)
         grid.attach(self.entry_importe, 1, 1, 1, 1)
 
-        # --- Widgets y lógica que solo se ejecutan si estamos MODIFICANDO ---
         if gasto_existente:
-            # 1. Creamos y mostramos la lista de amigos
             label_amigos = Gtk.Label(label="Amigos:")
             grid.attach(label_amigos, 0, 2, 1, 1)
             
@@ -56,23 +48,19 @@ class DialogoGasto(Gtk.Dialog):
             scrolled_window.set_child(amigos_box)
             grid.attach(scrolled_window, 1, 2, 1, 1)
 
-            # 2. Rellenamos los campos con los datos del gasto
             self.entry_desc.set_text(gasto_existente.description)
             self.entry_importe.set_value(gasto_existente.amount)
 
-            # 3. Marcamos los checkboxes de los amigos que ya participan
             if gasto_existente.friends:
                 ids_amigos_actuales = {amigo.id for amigo in gasto_existente.friends}
                 for amigo_id, checkbox in self.amigos_checkboxes.items():
                     if amigo_id in ids_amigos_actuales:
                         checkbox.set_active(True)
         
-        # La conexión de la señal se hace siempre
         self.connect("response", self._on_response)
 
     def _on_response(self, dialog, response_id):
         if response_id == Gtk.ResponseType.OK:
-            # Si el usuario acepta, obtiene los datos y ejecuta el callback
             form_data = self.get_form_data()
             if self.on_accept_callback:
                 self.on_accept_callback(form_data)
@@ -80,13 +68,11 @@ class DialogoGasto(Gtk.Dialog):
 
     def get_form_data(self) -> dict:
         amigos_seleccionados = [amigo_id for amigo_id, cb in self.amigos_checkboxes.items() if cb.get_active()]
-        # CORRECCIÓN: Devolvemos las claves en inglés para ser consistentes
         return {
             "description": self.entry_desc.get_text(),
             "amount": self.entry_importe.get_value(),
             "friend_ids": amigos_seleccionados
         }
-
 
 
 class VistaPrincipal(Gtk.ApplicationWindow):
@@ -101,75 +87,77 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         self.presenter = p
 
     def build_ui(self):
-        # Usamos un Overlay para poder mostrar un spinner de carga encima de la UI
         overlay = Gtk.Overlay()
         self.set_child(overlay)
-        self.spinner = Gtk.Spinner(spinning=False, visible=False)
-        self.spinner.set_halign(Gtk.Align.CENTER)
-        self.spinner.set_valign(Gtk.Align.CENTER)
-        self.spinner.set_size_request(50, 50)
+        self.spinner = Gtk.Spinner(spinning=False, visible=False, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, width_request=50, height_request=50)
         overlay.add_overlay(self.spinner)
 
-        main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-        main_box.set_margin_top(10); main_box.set_margin_bottom(10)
-        main_box.set_margin_start(10); main_box.set_margin_end(10)
+        main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20, margin_top=20, margin_bottom=20, margin_start=20, margin_end=20)
         overlay.set_child(main_box)
 
-        # --- Panel de Gastos ---
         gastos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, hexpand=True)
         main_box.append(gastos_box)
 
-        gastos_label = Gtk.Label(label="GASTOS", xalign=0)
+        gastos_label = Gtk.Label(halign=Gtk.Align.CENTER, use_markup=True)
+        gastos_label.set_markup("<span size='xx-large' weight='bold'>GASTOS</span>")
         gastos_box.append(gastos_label)
 
-        scrolled_window_gastos = Gtk.ScrolledWindow(vexpand=True)
-        self.lista_gastos = Gtk.ListBox()
+        scrolled_window_gastos = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy='never')
+        self.lista_gastos = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        self.lista_gastos.get_style_context().add_class("boxed-list")
         scrolled_window_gastos.set_child(self.lista_gastos)
         gastos_box.append(scrolled_window_gastos)
 
-        self.add_gasto_button = Gtk.Button(label="Añadir Gasto")
+        icon = Gtk.Image.new_from_icon_name("list-add-symbolic")
+        
+        # <--- INICIO DEL CAMBIO --->
+        icon.set_pixel_size(32) # Aumentamos el tamaño de 24 a 32
+        # <--- FIN DEL CAMBIO --->
+
+        self.add_gasto_button = Gtk.Button()
+        self.add_gasto_button.set_child(icon)
+        self.add_gasto_button.set_halign(Gtk.Align.CENTER)
+        self.add_gasto_button.set_valign(Gtk.Align.CENTER)
         gastos_box.append(self.add_gasto_button)
 
-        # --- Panel de Amigos ---
         amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, hexpand=True)
         main_box.append(amigos_box)
 
-        amigos_label = Gtk.Label(label="AMIGOS", xalign=0)
+        amigos_label = Gtk.Label(halign=Gtk.Align.CENTER, use_markup=True)
+        amigos_label.set_markup("<span size='xx-large' weight='bold'>AMIGOS</span>")
         amigos_box.append(amigos_label)
 
-        scrolled_window_amigos = Gtk.ScrolledWindow(vexpand=True)
-        self.lista_amigos = Gtk.ListBox()
+        scrolled_window_amigos = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy='never')
+        self.lista_amigos = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
+        self.lista_amigos.get_style_context().add_class("boxed-list")
         scrolled_window_amigos.set_child(self.lista_amigos)
         amigos_box.append(scrolled_window_amigos)
 
     def connect_signals(self):
-        # La lambda evita pasar el argumento 'widget' al presentador
         self.add_gasto_button.connect('clicked', lambda w: self.presenter.on_add_gasto_clicked())
 
     def show_loading(self, is_loading: bool):
         self.spinner.set_visible(is_loading)
         self.spinner.set_spinning(is_loading)
-        # Hacemos la ventana principal no-interactiva mientras carga
         self.get_child().get_child().set_sensitive(not is_loading)
 
-
     def mostrar_gastos(self, gastos: List[Gasto]):
-        while (child := self.lista_gastos.get_row_at_index(0)):
-            self.lista_gastos.remove(child)
+        while (child := self.lista_gastos.get_row_at_index(0)): self.lista_gastos.remove(child)
         for gasto in gastos:
-            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=5, margin_bottom=5)
-            # CORRECCIÓN: Usamos 'description' y 'amount'
-            info_label = Gtk.Label(label=f"{gasto.description}\n{gasto.amount:.2f}€", xalign=0, hexpand=True)
+            frame = Gtk.Frame(margin_bottom=5)
+            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
+            frame.set_child(row_box)
             
-            buttons_box = Gtk.Box(spacing=5)
-
+            info_label = Gtk.Label(label=f"<b>{gasto.description}</b>\n{gasto.amount:.2f}€", xalign=0, hexpand=True, use_markup=True)
+            
+            buttons_box = Gtk.Box(spacing=5, halign=Gtk.Align.END)
             details_button = Gtk.Button(label="Detalles")
             details_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_details_gasto_clicked(g_id))
-
-            modify_button = Gtk.Button(label="Modificar")
+            
+            modify_button = Gtk.Button.new_from_icon_name("document-edit-symbolic")
             modify_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_modify_gasto_clicked(g_id))
             
-            delete_button = Gtk.Button(label="Eliminar")
+            delete_button = Gtk.Button.new_from_icon_name("user-trash-symbolic")
             delete_button.get_style_context().add_class("destructive-action")
             delete_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_delete_gasto_clicked(g_id))
 
@@ -180,94 +168,57 @@ class VistaPrincipal(Gtk.ApplicationWindow):
             row_box.append(info_label)
             row_box.append(buttons_box)
             
-            self.lista_gastos.append(row_box)
-
+            self.lista_gastos.append(frame)
 
     def mostrar_amigos(self, amigos: List[Amigo]):
-        while (child := self.lista_amigos.get_row_at_index(0)):
-            self.lista_amigos.remove(child)
-
+        while (child := self.lista_amigos.get_row_at_index(0)): self.lista_amigos.remove(child)
         for amigo in amigos:
-            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=5, margin_bottom=5)
-            label = Gtk.Label(label=f"{amigo.name}\nSaldo: {amigo.saldo:.2f}€", xalign=0, hexpand=True)
+            frame = Gtk.Frame(margin_bottom=5)
+            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
+            frame.set_child(row_box)
+            
+            label = Gtk.Label(label=f"<b>{amigo.name}</b>\nSaldo: {amigo.saldo:.2f}€", xalign=0, hexpand=True, use_markup=True)
+            
             details_button = Gtk.Button(label="Detalles")
+            details_button.set_halign(Gtk.Align.END)
             details_button.connect('clicked', lambda w, a_id=amigo.id: self.presenter.on_details_amigo_clicked(a_id))
             
             row_box.append(label)
             row_box.append(details_button)
-            self.lista_amigos.append(row_box)
-
+            
+            self.lista_amigos.append(frame)
 
     def show_gasto_details(self, gasto: Gasto):
-        dialog=Gtk.MessageDialog(
-            transient_for=self,
-            modal=True,
-            message_type=Gtk.MessageType.INFO,
-            buttons=Gtk.ButtonsType.OK,
-            text=f"Detalles del Gasto {gasto.description}",
-        )
-
-        details = (
-            f"<b>ID:</b> {gasto.id}\n"
-            f"<b>Importe:</b> {gasto.amount:.2f}€\n"
-            f"<b>Fecha:</b> {gasto.date}\n"
-            f"<b>Nº de amigos:</b> {gasto.num_friends}\n"
-        )
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=f"Detalles del Gasto {gasto.description}")
+        details = (f"<b>ID:</b> {gasto.id}\n<b>Importe:</b> {gasto.amount:.2f}€\n<b>Fecha:</b> {gasto.date}\n<b>Nº de amigos:</b> {gasto.num_friends}\n")
         dialog.set_property("secondary_text", details)
         dialog.set_property("secondary_use_markup", True)
         dialog.connect("response", lambda d, response_id: d.destroy())
         dialog.present()
-
 
     def show_amigo_details(self, amigo: Amigo, gastos_asociados: List[Gasto]):
-        dialog = Gtk.MessageDialog(
-            transient_for=self,
-            modal=True,
-            message_type=Gtk.MessageType.INFO,
-            buttons=Gtk.ButtonsType.OK,
-            text=f"Detalles del Amigo {amigo.name}",
-        )
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=f"Detalles del Amigo {amigo.name}")
         gastos_str = "\n".join([f"- {gasto.description}: {gasto.amount:.2f}€" for gasto in gastos_asociados])
-        if not gastos_str:
-            gastos_str = "No participa en ningún gasto."
-
-        details = (
-            f"<b>ID:</b> {amigo.id}\n"
-            f"<b>Saldo:</b> {amigo.saldo:.2f}€\n"
-            f"<b>Crédito:</b> {amigo.credit_balance:.2f}€\n"
-            f"<b>Débito:</b> {amigo.debit_balance:.2f}€\n"
-            f"<b><u>Gastos en los que participa:</u></b>\n{gastos_str}"
-        )
+        if not gastos_str: gastos_str = "No participa en ningún gasto."
+        details = (f"<b>ID:</b> {amigo.id}\n<b>Saldo:</b> {amigo.saldo:.2f}€\n<b>Crédito:</b> {amigo.credit_balance:.2f}€\n<b>Débito:</b> {amigo.debit_balance:.2f}€\n<b><u>Gastos en los que participa:</u></b>\n{gastos_str}")
         dialog.set_property("secondary_text", details)
         dialog.set_property("secondary_use_markup", True)
         dialog.connect("response", lambda d, response_id: d.destroy())
         dialog.present()
-
 
     def mostrar_dialogo_gasto(self, amigos: List[Amigo], on_accept_callback, gasto_existente: Optional[Gasto] = None) -> DialogoGasto:
         dialog = DialogoGasto(self, amigos, on_accept_callback, gasto_existente)
         dialog.present()
         return dialog
 
-
     def show_confirm_delete_dialog(self, gasto_id: int):
-        dialog = Gtk.MessageDialog(
-            transient_for=self,
-            modal=True,
-            message_type=Gtk.MessageType.WARNING,
-            buttons=Gtk.ButtonsType.YES_NO,
-            text="¿Estás seguro de que quieres eliminar este gasto?",
-        )
+        dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.WARNING, buttons=Gtk.ButtonsType.YES_NO, text="¿Estás seguro de que quieres eliminar este gasto?")
         dialog.connect("response", lambda d, response_id: self._on_delete_dialog_response(d, response_id, gasto_id))
         dialog.present()
 
-
     def _on_delete_dialog_response(self, dialog, response_id, gasto_id):
         dialog.destroy()
-        if response_id == Gtk.ResponseType.YES:
-            self.presenter.on_confirm_delete(gasto_id)
-
-
+        if response_id == Gtk.ResponseType.YES: self.presenter.on_confirm_delete(gasto_id)
 
 class App(Gtk.Application):
     def __init__(self, modelo, **kwargs):
@@ -276,6 +227,7 @@ class App(Gtk.Application):
         self.win = None
 
     def do_activate(self):
+        # La importación se hace aquí para evitar importaciones circulares si es necesario
         from presenter import Presenter
         if not self.win:
             self.win = VistaPrincipal(application=self)
