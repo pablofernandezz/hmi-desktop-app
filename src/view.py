@@ -19,7 +19,6 @@ class DialogoGasto(Gtk.Dialog):
         else:
             self.set_title("Añadir Gasto")
 
-        # Añadimos botones estándar al diálogo
         self.add_buttons(
             "_Cancelar", Gtk.ResponseType.CANCEL,
             "_Aceptar", Gtk.ResponseType.OK
@@ -31,6 +30,7 @@ class DialogoGasto(Gtk.Dialog):
         grid = Gtk.Grid(margin_start=10, margin_end=10, margin_top=10, margin_bottom=10, row_spacing=10, column_spacing=10)
         content_area.append(grid)
 
+        # --- Widgets que se muestran SIEMPRE ---
         grid.attach(Gtk.Label(label="Descripción:"), 0, 0, 1, 1)
         self.entry_desc = Gtk.Entry()
         grid.attach(self.entry_desc, 1, 0, 1, 1)
@@ -40,31 +40,34 @@ class DialogoGasto(Gtk.Dialog):
         self.entry_importe.set_digits(2)
         grid.attach(self.entry_importe, 1, 1, 1, 1)
 
-        grid.attach(Gtk.Label(label="Amigos:"), 0, 2, 1, 1)
-        amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        for amigo in amigos:
-            # CORRECCIÓN: Usamos 'amigo.name' en lugar de 'amigo.nombre'
-            cb = Gtk.CheckButton(label=amigo.name)
-            self.amigos_checkboxes[amigo.id] = cb
-            amigos_box.append(cb)
-        
-        scrolled_window = Gtk.ScrolledWindow(height_request=150)
-        scrolled_window.set_child(amigos_box)
-        grid.attach(scrolled_window, 1, 2, 1, 1)
-
-        # Si es para modificar, rellenamos los campos con los datos existentes
+        # --- Widgets y lógica que solo se ejecutan si estamos MODIFICANDO ---
         if gasto_existente:
+            # 1. Creamos y mostramos la lista de amigos
+            label_amigos = Gtk.Label(label="Amigos:")
+            grid.attach(label_amigos, 0, 2, 1, 1)
+            
+            amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            for amigo in amigos:
+                checkbox = Gtk.CheckButton(label=amigo.name)
+                self.amigos_checkboxes[amigo.id] = checkbox
+                amigos_box.append(checkbox)
+
+            scrolled_window = Gtk.ScrolledWindow(height_request=150)
+            scrolled_window.set_child(amigos_box)
+            grid.attach(scrolled_window, 1, 2, 1, 1)
+
+            # 2. Rellenamos los campos con los datos del gasto
             self.entry_desc.set_text(gasto_existente.description)
             self.entry_importe.set_value(gasto_existente.amount)
-            # --- LÓGICA CORREGIDA Y ACTIVADA ---
-            # Marcamos los checkboxes de los amigos que ya están en el gasto.
+
+            # 3. Marcamos los checkboxes de los amigos que ya participan
             if gasto_existente.friends:
-                # Creamos un conjunto de IDs para una búsqueda rápida
-                ids_amigos_actuales = {amigo['id'] for amigo in gasto_existente.friends}
+                ids_amigos_actuales = {amigo.id for amigo in gasto_existente.friends}
                 for amigo_id, checkbox in self.amigos_checkboxes.items():
                     if amigo_id in ids_amigos_actuales:
                         checkbox.set_active(True)
-
+        
+        # La conexión de la señal se hace siempre
         self.connect("response", self._on_response)
 
     def _on_response(self, dialog, response_id):

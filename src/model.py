@@ -51,7 +51,12 @@ class Model:
         try:
             response=requests.get(f"{self.api_url}/expenses/{gasto_id}")
             response.raise_for_status()
-            return Gasto(**response.json())
+            gasto_data=response.json()
+        
+            amigos_en_gastos=self.get_amigos_por_gasto(gasto_id)
+            gasto= Gasto(**gasto_data)
+            gasto.friends=amigos_en_gastos
+            return gasto
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al obtener detalles del gasto {gasto_id}: {e}")
             return None
@@ -92,6 +97,36 @@ class Model:
             print(f"MODELO: Error al obtener gastos del amigo {amigo_id}: {e}")
             return []
 
+    def get_amigos_por_gasto(self, gasto_id: int) -> list[Amigo]:
+        print(f"MODELO: Obteniendo amigos asociados al gasto {gasto_id} desde el servidor...")
+        try:
+            response = requests.get(f"{self.api_url}/expenses/{gasto_id}/friends")
+            response.raise_for_status()
+            amigos_json = response.json()
+            return [Amigo(**amigo_data) for amigo_data in amigos_json]
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al obtener amigos del gasto {gasto_id}: {e}")
+            return []
+    
+    def add_amigo_a_gasto(self, gasto_id: int, amigo_id: int) -> bool:
+        print(f"MODELO: Asociando amigo {amigo_id} al gasto {gasto_id}...")
+        try:
+            response = requests.post(f"{self.api_url}/expenses/{gasto_id}/friends", json={"friend_id": amigo_id})
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al asociar amigo {amigo_id} al gasto {gasto_id}: {e}")
+            return False
+    
+    def remove_amigo_de_gasto(self, gasto_id: int, amigo_id: int) -> bool:
+        print(f"MODELO: Desasociando amigo {amigo_id} del gasto {gasto_id}...")
+        try:
+            response = requests.delete(f"{self.api_url}/expenses/{gasto_id}/friends/{amigo_id}")
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al desasociar amigo {amigo_id} del gasto {gasto_id}: {e}")
+            return False
     #Métodos añadidos para creación, modificación y eliminación de gastos
 
     def create_gasto(self, datos_gasto: dict) -> bool:

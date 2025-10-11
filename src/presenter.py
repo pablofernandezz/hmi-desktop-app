@@ -46,34 +46,59 @@ class Presenter:
         
 # --- Logica para añadir, modificar y eliminar gasto
     def on_add_gasto_clicked(self):
-        amigos = self.modelo.get_amigos()
-        if not amigos:
-            print("PRESENTER: No hay amigos para añadir a un gasto.")
-            return
+        print(f"PRESENTER: El usuario quiere añadir un nuevo gasto.")
 
         def al_aceptar(datos_gasto):
             datos_gasto['date'] = date.today().strftime("%Y-%m-%d")
+            datos_gasto.pop('friend_ids', None) 
             print(f"PRESENTER: Enviando al modelo los datos completos: {datos_gasto}")
 
             if self.modelo.create_gasto(datos_gasto):
                 self.cargar_datos_principales()
 
-        self.vista.mostrar_dialogo_gasto(amigos, on_accept_callback=al_aceptar)
+        self.vista.mostrar_dialogo_gasto(
+            amigos=[], 
+            on_accept_callback=al_aceptar
+        )
     
+    # ---CAMBIOS A PARTIR DE AQUÍ---
     def on_modify_gasto_clicked(self, gasto_id: int):
         print(f"PRESENTER: El usuario quiere modificar el gasto {gasto_id}.")
+        # obtenemos datos de gasto actual
         gasto_actual = self.modelo.get_gasto_details(gasto_id)
         todos_amigos = self.modelo.get_amigos()
 
         if not gasto_actual or not todos_amigos:
             print("PRESENTER: No se pudieron obtener los datos para modificar el gasto.")
             return
-
+        
         def al_aceptar_modificacion(datos_nuevos):
-            # La API necesita la fecha, la tomamos del gasto original
-            datos_nuevos['date'] = gasto_actual.date
-            if self.modelo.update_gasto(gasto_id, datos_nuevos):
-                self.cargar_datos_principales()
+            ids_amigos_originales = {amigo.id for amigo in gasto_actual.friends}
+            ids_amigos_nuevos = set(datos_nuevos['friend_ids'])
+
+            #balance nuevos de amigos
+            ids_anadir = ids_amigos_nuevos - ids_amigos_originales
+            ids_quitar = ids_amigos_originales - ids_amigos_nuevos
+
+            print(f"PRESENTER: Amigos a añadir: {ids_anadir}")
+            print(f"PRESENTER: Amigos a quitar: {ids_quitar}")
+
+            #añadir/quitar amigos del gasto
+            for amigo_id in ids_anadir:
+                self.modelo.add_amigo_a_gasto(gasto_id, amigo_id)
+            for amigo_id in ids_quitar:
+                self.modelo.remove_amigo_de_gasto(gasto_id, amigo_id)
+
+            #actualizar datos básicos del gasto
+            datos_gasto_bassico = {
+                "description": datos_nuevos["description"],
+                "amount": datos_nuevos["amount"],
+                "date": gasto_actual.date  # La fecha no se modifica
+            }
+            
+            #actualizar gasto
+            self.modelo.update_gasto(gasto_id, datos_gasto_bassico)
+            self.cargar_datos_principales()
 
         self.vista.mostrar_dialogo_gasto(
             todos_amigos,
