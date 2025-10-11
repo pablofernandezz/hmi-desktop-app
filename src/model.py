@@ -111,11 +111,14 @@ class Model:
     def add_amigo_a_gasto(self, gasto_id: int, amigo_id: int) -> bool:
         print(f"MODELO: Asociando amigo {amigo_id} al gasto {gasto_id}...")
         try:
-            response = requests.post(f"{self.api_url}/expenses/{gasto_id}/friends", json={"friend_id": amigo_id})
+            response = requests.post(f"{self.api_url}/expenses/{gasto_id}/friends", params={"friend_id": amigo_id})
             response.raise_for_status()
+            print(f"MODELO: Amigo {amigo_id} asociado al gasto {gasto_id} con éxito.")
             return True
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al asociar amigo {amigo_id} al gasto {gasto_id}: {e}")
+            if e.response is not None:
+                print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
             return False
     
     def remove_amigo_de_gasto(self, gasto_id: int, amigo_id: int) -> bool:
@@ -123,10 +126,14 @@ class Model:
         try:
             response = requests.delete(f"{self.api_url}/expenses/{gasto_id}/friends/{amigo_id}")
             response.raise_for_status()
+            print(f"MODELO: Amigo {amigo_id} desasociado del gasto {gasto_id} con éxito.")
             return True
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al desasociar amigo {amigo_id} del gasto {gasto_id}: {e}")
+            if e.response is not None:
+                print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
             return False
+
     #Métodos añadidos para creación, modificación y eliminación de gastos
 
     def create_gasto(self, datos_gasto: dict) -> bool:

@@ -135,6 +135,8 @@ class VistaPrincipal(Gtk.ApplicationWindow):
 
     def connect_signals(self):
         self.add_gasto_button.connect('clicked', lambda w: self.presenter.on_add_gasto_clicked())
+        self.lista_gastos.connect('row-activated', self.presenter.on_gasto_row_activated)
+        self.lista_amigos.connect('row-activated', self.presenter.on_amigo_row_activated)
 
     def show_loading(self, is_loading: bool):
         self.spinner.set_visible(is_loading)
@@ -144,15 +146,17 @@ class VistaPrincipal(Gtk.ApplicationWindow):
     def mostrar_gastos(self, gastos: List[Gasto]):
         while (child := self.lista_gastos.get_row_at_index(0)): self.lista_gastos.remove(child)
         for gasto in gastos:
+            row = Gtk.ListBoxRow() 
+            row.set_activatable(True) 
+            row.gasto_id = gasto.id
+            
             frame = Gtk.Frame(margin_bottom=5)
             row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
             frame.set_child(row_box)
+            row.set_child(frame) 
             
             info_label = Gtk.Label(label=f"<b>{gasto.description}</b>\n{gasto.amount:.2f}€", xalign=0, hexpand=True, use_markup=True)
-            
             buttons_box = Gtk.Box(spacing=5, halign=Gtk.Align.END)
-            details_button = Gtk.Button(label="Detalles")
-            details_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_details_gasto_clicked(g_id))
             
             modify_button = Gtk.Button.new_from_icon_name("document-edit-symbolic")
             modify_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_modify_gasto_clicked(g_id))
@@ -161,36 +165,46 @@ class VistaPrincipal(Gtk.ApplicationWindow):
             delete_button.get_style_context().add_class("destructive-action")
             delete_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_delete_gasto_clicked(g_id))
 
-            buttons_box.append(details_button)
             buttons_box.append(modify_button)
             buttons_box.append(delete_button)
 
             row_box.append(info_label)
             row_box.append(buttons_box)
-            
-            self.lista_gastos.append(frame)
+            self.lista_gastos.append(row)
 
     def mostrar_amigos(self, amigos: List[Amigo]):
         while (child := self.lista_amigos.get_row_at_index(0)): self.lista_amigos.remove(child)
         for amigo in amigos:
+            row = Gtk.ListBoxRow()
+            row.set_activatable(True)
+            row.amigo_id = amigo.id
+            
             frame = Gtk.Frame(margin_bottom=5)
             row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
             frame.set_child(row_box)
+            row.set_child(frame) 
             
             label = Gtk.Label(label=f"<b>{amigo.name}</b>\nSaldo: {amigo.saldo:.2f}€", xalign=0, hexpand=True, use_markup=True)
-            
-            details_button = Gtk.Button(label="Detalles")
-            details_button.set_halign(Gtk.Align.END)
-            details_button.connect('clicked', lambda w, a_id=amigo.id: self.presenter.on_details_amigo_clicked(a_id))
-            
             row_box.append(label)
-            row_box.append(details_button)
-            
-            self.lista_amigos.append(frame)
+            self.lista_amigos.append(row)
 
     def show_gasto_details(self, gasto: Gasto):
         dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=f"Detalles del Gasto {gasto.description}")
-        details = (f"<b>ID:</b> {gasto.id}\n<b>Importe:</b> {gasto.amount:.2f}€\n<b>Fecha:</b> {gasto.date}\n<b>Nº de amigos:</b> {gasto.num_friends}\n")
+        num_amigos = len(gasto.friends)
+        
+        if gasto.friends:
+            nombres_amigos = ", ".join([amigo.name for amigo in gasto.friends])
+            amigos_markup = f"<b>Amigos:</b> {nombres_amigos}"
+        else:
+            amigos_markup= "<b>Amigos:</b> Ninguno"
+        
+        details = (
+        f"<b>ID:</b> {gasto.id}\n"
+        f"<b>Importe:</b> {gasto.amount:.2f}€\n"
+        f"<b>Fecha:</b> {gasto.date}\n"
+        f"<b>Nº de amigos:</b> {num_amigos}\n"
+        f"{amigos_markup}" # lista de nombres
+        )        
         dialog.set_property("secondary_text", details)
         dialog.set_property("secondary_use_markup", True)
         dialog.connect("response", lambda d, response_id: d.destroy())

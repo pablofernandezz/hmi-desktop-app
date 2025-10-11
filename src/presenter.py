@@ -23,6 +23,14 @@ class Presenter:
 
 # --- Logica para ver detalles
 
+    def on_gasto_row_activated(self, listbox, row):
+        gasto_id = row.gasto_id
+        self.on_details_gasto_clicked(gasto_id)
+
+    def on_amigo_row_activated(self, listbox, row):
+        amigo_id = row.amigo_id
+        self.on_details_amigo_clicked(amigo_id)
+
     def on_details_gasto_clicked(self, gasto_id: int):
         print(f"PRESENTER: Usuario quiere ver detalles del gasto {gasto_id}")
         self.vista.show_loading(True)
