@@ -44,7 +44,7 @@ class Model:
             return gastos
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al obtener lista de gastos: {e}")
-            return []
+            return None
         
     def get_gasto_details(self, gasto_id: int):
         print(f"MODELO: Obteniendo detalles del gasto {gasto_id} desde el servidor...")
@@ -74,7 +74,7 @@ class Model:
             return amigos
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al obtener lista de amigos: {e}")
-            return []
+            return None
         
     def get_amigo_details(self, amigo_id: int):
         print(f"MODELO: Obteniendo detalles del amigo {amigo_id} desde el servidor...")

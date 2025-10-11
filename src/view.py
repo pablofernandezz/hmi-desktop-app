@@ -92,6 +92,22 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         self.spinner = Gtk.Spinner(spinning=False, visible=False, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, width_request=50, height_request=50)
         overlay.add_overlay(self.spinner)
 
+        root_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        overlay.set_child(root_box)
+
+        try:
+            logo_image = Gtk.Image.new_from_file("../assets/images/logo.png")
+            logo_image.set_pixel_size(64) # Ajusta el tamaño como prefieras
+            logo_image.set_margin_top(10)
+            root_box.append(logo_image)
+        except GLib.Error as e:
+            print(f"Error al cargar el logo: {e}. Asegúrate de que la ruta es correcta.")
+            root_box.append(Gtk.Label(label="SplitWithMe"))
+
+        self.stack = Gtk.Stack()
+        self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+        root_box.append(self.stack)
+
         main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20, margin_top=20, margin_bottom=20, margin_start=20, margin_end=20)
         overlay.set_child(main_box)
 
@@ -133,10 +149,33 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         scrolled_window_amigos.set_child(self.lista_amigos)
         amigos_box.append(scrolled_window_amigos)
 
+        error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, vexpand=True)
+        self.stack.add_named(error_box, "error_screen")
+        
+        try:
+            error_image = Gtk.Image.new_from_file("../assets/images/wifi-off.png")
+            error_image.set_pixel_size(64)
+            error_box.append(error_image)
+        except GLib.Error as e:
+            print(f"Error al cargar la imagen de error: {e}")
+        
+        error_label = Gtk.Label(label="No es posible conectarse con el servidor")
+        error_box.append(error_label)
+
+        self.retry_button = Gtk.Button(label="Reintentar")
+        error_box.append(self.retry_button)
+
     def connect_signals(self):
         self.add_gasto_button.connect('clicked', lambda w: self.presenter.on_add_gasto_clicked())
         self.lista_gastos.connect('row-activated', self.presenter.on_gasto_row_activated)
         self.lista_amigos.connect('row-activated', self.presenter.on_amigo_row_activated)
+        self.retry_button.connect('clicked', self.presenter.on_retry_clicked)
+
+    def show_connection_error(self, visible: bool):
+        if visible:
+            self.stack.set_visible_child_name("error_screen")
+        else:
+            self.stack.set_visible_child_name("main_content")
 
     def show_loading(self, is_loading: bool):
         self.spinner.set_visible(is_loading)

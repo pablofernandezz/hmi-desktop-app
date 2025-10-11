@@ -16,12 +16,23 @@ class Presenter:
         self.vista.show_loading(True)
         gastos = self.modelo.get_gastos()
         amigos = self.modelo.get_amigos()
-        self.vista.mostrar_gastos(gastos)
-        self.vista.mostrar_amigos(amigos)
+        
         self.vista.show_loading(False)
+
+        if gastos is None or amigos is None:
+            print("PRESENTER: Error de conexion detectado. Mostrando pantalla de error.")
+            self.vista.show_connection_error(True)
+        else:
+            self.vista.show_connection_error(False)
+            self.vista.mostrar_gastos(gastos)
+            self.vista.mostrar_amigos(amigos) 
         print("PRESENTER: Datos iniciales cargados en la vista.")
 
 # --- Logica para ver detalles
+
+    def on_retry_clicked(self, widget):
+        print("PRESENTER: El usuario ha pulsado Reintentar.")
+        self.cargar_datos_principales() 
 
     def on_gasto_row_activated(self, listbox, row):
         gasto_id = row.gasto_id
