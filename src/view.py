@@ -9,9 +9,11 @@ from typing import List, Optional
 from model import Gasto, Amigo
 
 class DialogoGasto(Gtk.Dialog):
-    def __init__(self, parent, amigos: List[Amigo], gasto_existente: Optional[Gasto] = None):
+    def __init__(self, parent, amigos: List[Amigo], on_accept_callback, gasto_existente: Optional[Gasto] = None):
         super().__init__(transient_for=parent, modal=True)
         
+        self.on_accept_callback = on_accept_callback
+
         if gasto_existente:
             self.set_title("Modificar Gasto")
         else:
@@ -52,14 +54,26 @@ class DialogoGasto(Gtk.Dialog):
 
         # Si es para modificar, rellenamos los campos con los datos existentes
         if gasto_existente:
-            # CORRECCIÓN: Usamos 'description' y 'amount'
             self.entry_desc.set_text(gasto_existente.description)
             self.entry_importe.set_value(gasto_existente.amount)
-            # La lógica para marcar los amigos asociados al gasto iría aquí
-            # (necesitaríamos que el modelo nos diera esa información)
-            # for amigo_id in gasto_existente.friends:
-            #     if amigo_id in self.amigos_checkboxes:
-            #         self.amigos_checkboxes[amigo_id].set_active(True)
+            # --- LÓGICA CORREGIDA Y ACTIVADA ---
+            # Marcamos los checkboxes de los amigos que ya están en el gasto.
+            if gasto_existente.friends:
+                # Creamos un conjunto de IDs para una búsqueda rápida
+                ids_amigos_actuales = {amigo['id'] for amigo in gasto_existente.friends}
+                for amigo_id, checkbox in self.amigos_checkboxes.items():
+                    if amigo_id in ids_amigos_actuales:
+                        checkbox.set_active(True)
+
+        self.connect("response", self._on_response)
+
+    def _on_response(self, dialog, response_id):
+        if response_id == Gtk.ResponseType.OK:
+            # Si el usuario acepta, obtiene los datos y ejecuta el callback
+            form_data = self.get_form_data()
+            if self.on_accept_callback:
+                self.on_accept_callback(form_data)
+        self.destroy()
 
     def get_form_data(self) -> dict:
         amigos_seleccionados = [amigo_id for amigo_id, cb in self.amigos_checkboxes.items() if cb.get_active()]
@@ -67,7 +81,7 @@ class DialogoGasto(Gtk.Dialog):
         return {
             "description": self.entry_desc.get_text(),
             "amount": self.entry_importe.get_value(),
-            "friends_ids": amigos_seleccionados
+            "friend_ids": amigos_seleccionados
         }
 
 
@@ -187,13 +201,14 @@ class VistaPrincipal(Gtk.ApplicationWindow):
             modal=True,
             message_type=Gtk.MessageType.INFO,
             buttons=Gtk.ButtonsType.OK,
-            text=f"Detalles del Gasto ID {gasto.description}",
+            text=f"Detalles del Gasto {gasto.description}",
         )
+
         details = (
             f"<b>ID:</b> {gasto.id}\n"
             f"<b>Importe:</b> {gasto.amount:.2f}€\n"
             f"<b>Fecha:</b> {gasto.date}\n"
-            f"<b>Nº de amigos:</b> {gasto.num_friends}"
+            f"<b>Nº de amigos:</b> {gasto.num_friends}\n"
         )
         dialog.set_property("secondary_text", details)
         dialog.set_property("secondary_use_markup", True)
@@ -226,8 +241,9 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         dialog.present()
 
 
-    def mostrar_dialogo_gasto(self, amigos: List[Amigo], gasto_existente: Optional[Gasto] = None) -> DialogoGasto:
-        dialog = DialogoGasto(self, amigos, gasto_existente)
+    def mostrar_dialogo_gasto(self, amigos: List[Amigo], on_accept_callback, gasto_existente: Optional[Gasto] = None) -> DialogoGasto:
+        dialog = DialogoGasto(self, amigos, on_accept_callback, gasto_existente)
+        dialog.present()
         return dialog
 
 

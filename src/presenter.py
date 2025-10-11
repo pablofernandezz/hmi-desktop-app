@@ -1,4 +1,6 @@
 # presenter.py
+from datetime import date
+
 class Presenter:
     def __init__(self, vista, modelo):
         self.vista = vista
@@ -42,13 +44,48 @@ class Presenter:
         else:
             print(f"PRESENTER: No se pudo obtener la información del amigo {amigo_id}.")
         
-# --- Logica para añadir, modificar y eliminar gasto (por implementar)
-    def on_add_gasto_clicked(self, widget):
-        print("PRESENTER: El usuario ha hecho clic en 'Añadir Gasto'.")
-        #falta por añadir el muestreo del dialogo de añadir gasto
+# --- Logica para añadir, modificar y eliminar gasto
+    def on_add_gasto_clicked(self):
+        amigos = self.modelo.get_amigos()
+        if not amigos:
+            print("PRESENTER: No hay amigos para añadir a un gasto.")
+            return
+
+        def al_aceptar(datos_gasto):
+            datos_gasto['date'] = date.today().strftime("%Y-%m-%d")
+            print(f"PRESENTER: Enviando al modelo los datos completos: {datos_gasto}")
+
+            if self.modelo.create_gasto(datos_gasto):
+                self.cargar_datos_principales()
+
+        self.vista.mostrar_dialogo_gasto(amigos, on_accept_callback=al_aceptar)
     
     def on_modify_gasto_clicked(self, gasto_id: int):
         print(f"PRESENTER: El usuario quiere modificar el gasto {gasto_id}.")
+        gasto_actual = self.modelo.get_gasto_details(gasto_id)
+        todos_amigos = self.modelo.get_amigos()
+
+        if not gasto_actual or not todos_amigos:
+            print("PRESENTER: No se pudieron obtener los datos para modificar el gasto.")
+            return
+
+        def al_aceptar_modificacion(datos_nuevos):
+            # La API necesita la fecha, la tomamos del gasto original
+            datos_nuevos['date'] = gasto_actual.date
+            if self.modelo.update_gasto(gasto_id, datos_nuevos):
+                self.cargar_datos_principales()
+
+        self.vista.mostrar_dialogo_gasto(
+            todos_amigos,
+            on_accept_callback=al_aceptar_modificacion,
+            gasto_existente=gasto_actual
+        )
 
     def on_delete_gasto_clicked(self, gasto_id: int):
         print(f"PRESENTER: El usuario quiere eliminar el gasto {gasto_id}.")
+        self.vista.show_confirm_delete_dialog(gasto_id)
+
+    def on_confirm_delete(self, gasto_id: int):
+        # La vista llama a este método solo si el usuario confirma
+        if self.modelo.delete_gasto(gasto_id):
+            self.cargar_datos_principales()

@@ -91,3 +91,37 @@ class Model:
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al obtener gastos del amigo {amigo_id}: {e}")
             return []
+
+    #Métodos añadidos para creación, modificación y eliminación de gastos
+
+    def create_gasto(self, datos_gasto: dict) -> bool:
+        print(f"MODELO: Creando nuevo gasto con datos: {datos_gasto}")
+        try:
+            response = requests.post(f"{self.api_url}/expenses", json=datos_gasto)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al crear el gasto: {e}")
+            return False
+
+    def update_gasto(self, gasto_id: int, datos_gasto: dict) -> bool:
+        print(f"MODELO: Actualizando gasto {gasto_id} con datos: {datos_gasto}")
+        try:
+            response = requests.put(f"{self.api_url}/expenses/{gasto_id}", json=datos_gasto)
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al actualizar el gasto {gasto_id}: {e}")
+            return False
+
+    def delete_gasto(self, gasto_id: int) -> bool:
+        print(f"MODELO: Eliminando gasto {gasto_id}")
+        try:
+            response = requests.delete(f"{self.api_url}/expenses/{gasto_id}")
+            response.raise_for_status()
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al eliminar el gasto {gasto_id}: {e}")
+            return False
+
+            
