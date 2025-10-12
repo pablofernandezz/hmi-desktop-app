@@ -34,53 +34,69 @@ config:
   layout: elk
 ---
 classDiagram
-    class View {
-        <<GTK Widget>>
+    direction LR
+    class VistaPrincipal {
+        <<GTK.ApplicationWindow>>
         - presenter: Presenter
         + set_presenter(p)
         + build_ui()
-        + show_expenses(expenses: list)
-        + show_friends(friends: list)
-        + show_loading(is_visible: bool)
-        + show_error_dialog(message: string)
-        + get_expense_form_data(): dict
+        + mostrar_gastos(gastos: List[Gasto])
+        + mostrar_amigos(amigos: List[Amigo])
+        + show_loading(is_loading: bool)
+        + show_connection_error(visible: bool)
+        + mostrar_dialogo_gasto(amigos, callback, gasto_existente)
+        + show_confirm_delete_dialog(gasto_id: bool)
         + connect_signals()
+    }
+    class DialogoGasto {
+        <<Gtk.Dialog>>
+        - on_accept_callback: function
+        + get_form_data(): dict
     }
     class Presenter {
         - model: Model
-        - view: View
-        + __init__(model, view)
-        + start()
-        + on_add_expense_clicked()
-        + on_confirm_add_expense()
-        + on_delete_expense_clicked()
-        + on_assign_friend_to_expense(expense_id: int, friend_id: int)
+        - view: VistaPrincipal
+        + __init__(vista, modelo)
+        + iniciar()
+        + cargar_datos_principales()
+        + on_add_gasto_clicked()
+        + on_modify_gasto_clicked(gasto_id: int)
+        + on_delete_expense_clicked(gasto_id: int)
+        + on_confirm_delete(gasto_id: int)
+        + on_gasto_row_activated(row)
     }
     class Model {
         - api_url: string
-        + get_expenses() : list[Expense]
-        + get_friends() : list[Friend]
-        + add_expense(data: dict) : Expense
-        + delete_expense(expense_id: int) : bool
-        + assign_friend_to_expense(expense_id: int, friend_id: int)
+        + get_gastos() : List[Gasto]
+        + get_amigos() : List[Amigo]
+        + get_gasto_details(gasto_id: int): Gasto
+        + create_gasto(datos: dict): bool
+        + update_gasto(gasto_id: int, datos: dict): bool
+        + delete_gasto(gasto_id: int): bool
+        + add_amigo_a_gasto(gasto_id: int, amigo_id: int): bool
+        + remove_amigo_de_gasto(gasto_id: int, amigo_id: int): bool
     }
-    class Expense {
+    class Gasto {
         + id: int
         + description: string
         + amount: float
-        + friends: list[Friend]
+        + date: string
+        + friends: List[Amigo]
     }
-    class Friend {
+    class Amigo {
         + id: int
         + name: string
-        + expenses: list[Expense]
+        + credit_balance: float
+        + debit_balance: float
+        + saldo: float ## property ##
     }
     Presenter "1" o-- "1" Model : uses
-    Presenter "1" o-- "1" View : controls
-    View ..> Presenter : signals
-    Model ..> Expense : creates
-    Model ..> Friend : creates
-    Expense "0..*" -- "0..*" Friend : involved
+    Presenter "1" o-- "1" VistaPrincipal : controls
+    VistaPrincipal ..> Presenter : signals
+    VistaPrincipal "1" *-- "1" DialogoGasto : creates
+    Model ..> Gasto : creates
+    Model ..> Amigo : creates
+    Gasto "0..*" -- "0..*" Amigo : involved
 
 ```
 ---
@@ -96,70 +112,61 @@ Objetivo: Mostrar cómo el usuario ingresa los datos de un gasto, se asignan ami
 ```mermaid
 sequenceDiagram
     actor User
-    participant View
+    participant VistaPrincipal
     participant Presenter
+    participant DialogoGasto
     participant Model
 
-    User->>View: Clica botón "Añadir Gasto"
-    View->>Presenter: on_add_expense_clicked()
+    User->>VistaPrincipal: Clica botón "Añadir Gasto"
+    VistaPrincipal->>Presenter: on_add_gasto_clicked()
     
-    Presenter->>Model: get_friends()
+    Presenter->>VistaPrincipal: mostrar_dialogo_gasto(amigos=[], on_accept_callback=al_aceptar)    activate Model
+    activate VistaPrincipal
+    VistaPrincipal->>DialogoGasto: __init__(...)
+    VistaPrincipal-->>User: Muestra diálogo para añadir gasto
+    deactivate VistaPrincipal
+    
+    User->>DialogoGasto: Rellena datos y clica "Aceptar"
+    DialogoGasto->>Presenter: al_aceptar(datos_gasto) %% Invoca el callback %%
+
+    Presenter->>VistaPrincipal: show_loading(True)
+    
+    Presenter->>Model: create_gasto(datos_gasto)
     activate Model
-    Model-->>Presenter: devuelve lista_de_amigos
+    Model-->>Presenter: devuelve True/False
     deactivate Model
     
-    Presenter->>View: show_add_expense_dialog(lista_de_amigos)
-    activate View
-    View-->>User: Muestra diálogo para añadir gasto
-    deactivate View
+    Presenter->>Presenter: cargar_datos_principales() %% Recarga todos los datos %%
     
-    User->>View: Rellena datos y clica "Confirmar"
-    View->>Presenter: on_confirm_add_expense()
+    Note over Presenter, Model: Llama a get_gastos() y get_amigos()
     
-    Presenter->>View: get_expense_dialog_data()
-    activate View
-    View-->>Presenter: devuelve datos_del_gasto
-    deactivate View
-    
-    Presenter->>View: show_loading(True)
-    
-    Presenter->>Model: add_expense(datos_del_gasto)
-    activate Model
-    Model-->>Presenter: devuelve resultado_operacion
-    deactivate Model
-    
-    Presenter->>Model: get_expenses()
-    activate Model
-    Model-->>Presenter: devuelve lista_actualizada
-    deactivate Model
-    
-    Presenter->>View: update_expense_list(lista_actualizada)
-    Presenter->>View: show_loading(False)
+    Presenter->>VistaPrincipal: mostrar_gastos(lista_actualizada)
+    Presenter->>VistaPrincipal: show_loading(False)
 ```
 
-### **3.2 Añadir un Gasto Nuevo**
+### **3.2 Ver Detalles de un Gasto**
 
 Objetivo: Mostrar cómo el usuario selecciona un gasto y la aplicación muestra su información detallada.
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant View
+    participant VistaPrincipal
     participant Presenter
     participant Model
 
-    User->>View: Selecciona un gasto y clica "Ver Detalles"
-    View->>Presenter: on_view_details_clicked(gasto_id)
+    User->>VistaPrincipal: Activa una fila de la lista de gastos
+    VistaPrincipal->>Presenter: on_view_row_activated(row)
 
-    Presenter->>View: show_loading(True)
+    Presenter->>VistaPrincipal: show_loading(True)
 
-    Presenter->>Model: get_expense_details(gasto_id)
+    Presenter->>Model: get_gasto_details(gasto_id)
     activate Model
-    Model-->>Presenter: devuelve detalles_del_gasto
+    Model-->>Presenter: devuelve objeto Gasto con amigos
     deactivate Model
 
-    Presenter->>View: show_expense_details_dialog(detalles_del_gasto)
-    Presenter->>View: show_loading(False)
+    Presenter->>VistaPrincipal: show_gasto_details(gasto)
+    Presenter->>VistaPrincipal: show_loading(False)
 ```
 
 #### **3.3 Modificar Datos de un Gasto**
@@ -169,50 +176,49 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     actor User
-    participant View
+    participant VistaPrincipal
     participant Presenter
     participant Model
 
-    User->>View: Selecciona un gasto y clica "Modificar"
-    View->>Presenter: on_modify_expense_clicked(gasto_id)
+    User->>VistaPrincipal: Clica botón "Modificar" en un gasto
+    VistaPrincipal->>Presenter: on_modify_gasto_clicked(gasto_id)
 
-    Presenter->>View: show_loading(True)
+    Presenter->>VistaPrincipal: show_loading(True)
 
-    Presenter->>Model: get_expense_details(gasto_id)
+    Presenter->>Model: get_gasto_details(gasto_id)
     activate Model
-    Model-->>Presenter: devuelve datos_actuales_gasto
+    Model-->>Presenter: devuelve gasto_actual
     deactivate Model
 
-    Presenter->>Model: get_friends()
+    Presenter->>Model: get_amigos()
     activate Model
-    Model-->>Presenter: devuelve lista_de_amigos
+    Model-->>Presenter: devuelve todos_amigos
     deactivate Model
 
-    Presenter->>View: show_modify_expense_dialog(datos_actuales_gasto, lista_de_amigos)
-    Presenter->>View: show_loading(False)
+    Presenter->>VistaPrincipal: mostrar_dialogo_gasto(todos_amigos, al_aceptar_modificacion, gasto_actual)
+    Presenter->>VistaPrincipal: show_loading(False)
     
-    User->>View: Modifica datos y clica "Confirmar"
-    View->>Presenter: on_confirm_modify_expense(gasto_id)
+    User->>VistaPrincipal: Modifica datos y clica "Aceptar"
+    VistaPrincipal->>Presenter: al_aceptar_modificacion(datos_nuevos) %% Invoca el callback %%
 
-    Presenter->>View: get_expense_dialog_data()
-    activate View
-    View-->>Presenter: devuelve datos_modificados
-    deactivate View
+    Presenter->>VistaPrincipal: show_loading(True)
 
-    Presenter->>View: show_loading(True)
+    Note over Presenter: Calcula amigos a añadir y a quitar
 
-    Presenter->>Model: update_expense(gasto_id, datos_modificados)
+    loop Para cada amigo a añadir
+        Presenter->>Model: add_amigo_a_gasto(gasto_id, amigo_id)
+    end
+    loop Para cada amigo a quitar
+        Presenter->>Model: remove_amigo_de_gasto(gasto_id, amigo_id)
+    end
+
+    Presenter->>Model: update_gasto(gasto_id, datos_basicos)
     activate Model
-    Model-->>Presenter: devuelve resultado_operacion
+    Model-->>Presenter: devuelve True/False
     deactivate Model
 
-    Presenter->>Model: get_expenses()
-    activate Model
-    Model-->>Presenter: devuelve lista_actualizada
-    deactivate Model
-
-    Presenter->>View: update_expense_list(lista_actualizada)
-    Presenter->>View: show_loading(False)
+    Presenter->>Presenter: cargar_datos_principales()
+    Note over Presenter, VistaPrincipal: Recarga y actualiza toda la vista
 ```
 
 ### **3.4. Eliminar un Gasto**
@@ -222,37 +228,32 @@ Objetivo: Mostrar el proceso de eliminación de un gasto, incluyendo el paso de 
 ```mermaid
 sequenceDiagram
     actor User
-    participant View
+    participant VistaPrincipal
     participant Presenter
     participant Model
 
-    User->>View: Selecciona un gasto y clica "Eliminar"
-    View->>Presenter: on_delete_expense_clicked(gasto_id)
+    User->>View: Clica botón "Eliminar" de un gasto
+    VistaPrincipal->>Presenter: on_delete_gasto_clicked(gasto_id)
 
-    Presenter->>View: show_confirm_delete_dialog("¿Estás seguro?")
-    
+    Presenter->>VistaPrincipal: show_confirm_delete_dialog(...)
+
     alt Usuario confirma
-        User->>View: Clica "Sí"
-        View->>Presenter: on_confirm_delete(gasto_id)
+        User->>VistaPrincipal: Clica "Sí"
+        VistaPrincipal->>Presenter: on_confirm_delete(gasto_id)
 
-        Presenter->>View: show_loading(True)
+        Presenter->>VistaPrincipal: show_loading(True)
 
-        Presenter->>Model: delete_expense(gasto_id)
+        Presenter->>Model: delete_gasto(gasto_id)
         activate Model
-        Model-->>Presenter: devuelve resultado_operacion
+        Model-->>Presenter: devuelve True/False
         deactivate Model
 
-        Presenter->>Model: get_expenses()
-        activate Model
-        Model-->>Presenter: devuelve lista_actualizada
-        deactivate Model
-
-        Presenter->>View: update_expense_list(lista_actualizada)
-        Presenter->>View: show_loading(False)
+        Presenter->>Presenter: cargar_datos_principales()
+        Note over Presenter, VistaPrincipal: Recarga y actualiza toda la vista
 
     else Usuario cancela
-        User->>View: Clica "No"
-        Note over View, Presenter: El diálogo se cierra. Fin del caso de uso.
+        User->>VistaPrincipal: Clica "No"
+        Note over VistaPrincipal, Presenter: El diálogo se cierra. Fin del caso de uso.
     end
 ```
 
@@ -263,27 +264,25 @@ Objetivo: Mostrar cómo el usuario selecciona un amigo para ver su información 
 ```mermaid
 sequenceDiagram
     actor User
-    participant View
+    participant VistaPrincipal
     participant Presenter
     participant Model
 
-    User->>View: Selecciona un amigo de la lista
-    View->>Presenter: on_friend_selected(amigo_id)
+    User->>VistaPrincipal: Activa una fila de la lista de amigos
+    VistaPrincipal->>Presenter: on_amigo_row_activated(row)
 
-    Presenter->>View: show_loading(True)
+    Presenter->>VistaPrincipal: show_loading(True)
 
-    Presenter->>Model: get_friend_details(amigo_id)
+    Presenter->>Model: get_amigo_details(amigo_id)
     activate Model
-    Note right of Model: Petición a GET /friends/{id}
-    Model-->>Presenter: devuelve detalles_del_amigo
+    Model-->>Presenter: devuelve objeto Amigo
     deactivate Model
 
-    Presenter->>Model: get_expenses_for_friend(amigo_id)
+    Presenter->>Model: get_gastos_por_amigo(amigo_id)
     activate Model
-    Note right of Model: Petición a GET /friends/{id}/expenses
-    Model-->>Presenter: devuelve gastos_del_amigo
+    Model-->>Presenter: devuelve lista de Gastos
     deactivate Model
 
-    Presenter->>View: update_friend_details_panel(detalles_del_amigo, gastos_del_amigo)
-    Presenter->>View: show_loading(False)
+    Presenter->>VistaPrincipal: show_amigo_details(amigo, gastos_asociados)
+    Presenter->>VistaPrincipal: show_loading(False)
 ```
