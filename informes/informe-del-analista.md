@@ -18,6 +18,12 @@
    
    - Ha contribuido con iniciativa en todos los campos de la práctica, aportando nuevas ideas para el diseño y buena presentación de la práctica.
 
+   - Joel Ramos Carro
+
+   - 4
+
+   - He intentado contribuir de la manera más activa y efectiva posible para que la realización de la práctica fuese correcta. También debería mejorar algún aspecto como la comprensión calmada de los objetivos para tener una idea clara desde el principio.
+
 ## Retrospectiva de la semana 1
 
   a) ¿Qué ha sido lo mejor de la práctica? Llevar a cabo el diseño e implementación de una aplicación. Poder aplicar los conocimientos de adquiridos previamente, desarrollar una pequeña aplicación y ver el resultado es de lo que más nos ha entusiasmado.
