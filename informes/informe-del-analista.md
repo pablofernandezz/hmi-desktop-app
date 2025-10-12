@@ -8,13 +8,13 @@
 
    - Pablo Fernández Marti
    
-     - 9,5
+     - 5
 	 
 	 - Ha ejercido un papel importante en el trabajo ya que, además de realizar las tareas conjuntas como la implementación o diseño de la interfaz, ha coordinado muy bien al equipo distribuyendo el trabajo equitativamente.
 
    - Nicolás Domínguez Souto
     
-     - 9
+     - 4
    
    - Ha contribuido con iniciativa en todos los campos de la práctica, aportando nuevas ideas para el diseño y buena presentación de la práctica.
 
