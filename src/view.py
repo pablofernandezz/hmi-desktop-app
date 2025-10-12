@@ -1,4 +1,4 @@
-# src/view.py (Versión Final con Icono de Añadir MÁS GRANDE)
+# src/view.py
 
 import gi
 gi.require_version("Gtk", "4.0")
@@ -95,10 +95,11 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         root_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         overlay.set_child(root_box)
 
+        #añadimos logo
         try:
             logo_image = Gtk.Image.new_from_file("../assets/images/logo.png")
-            logo_image.set_pixel_size(64) # Ajusta el tamaño como prefieras
-            logo_image.set_margin_top(10)
+            logo_image.set_pixel_size(175)
+            #logo_image.set_margin_top(-100) los margenes negativos estan dando fallos
             root_box.append(logo_image)
         except GLib.Error as e:
             print(f"Error al cargar el logo: {e}. Asegúrate de que la ruta es correcta.")
@@ -109,7 +110,7 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         root_box.append(self.stack)
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20, margin_top=20, margin_bottom=20, margin_start=20, margin_end=20)
-        overlay.set_child(main_box)
+        self.stack.add_named(main_box, "main_content")
 
         gastos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, hexpand=True)
         main_box.append(gastos_box)
@@ -118,7 +119,8 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         gastos_label.set_markup("<span size='xx-large' weight='bold'>GASTOS</span>")
         gastos_box.append(gastos_label)
 
-        scrolled_window_gastos = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy='never')
+        scrolled_window_gastos = Gtk.ScrolledWindow(vexpand=True)
+        scrolled_window_gastos.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.lista_gastos = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
         self.lista_gastos.get_style_context().add_class("boxed-list")
         scrolled_window_gastos.set_child(self.lista_gastos)
@@ -126,9 +128,7 @@ class VistaPrincipal(Gtk.ApplicationWindow):
 
         icon = Gtk.Image.new_from_icon_name("list-add-symbolic")
         
-        # <--- INICIO DEL CAMBIO --->
-        icon.set_pixel_size(32) # Aumentamos el tamaño de 24 a 32
-        # <--- FIN DEL CAMBIO --->
+        icon.set_pixel_size(32) 
 
         self.add_gasto_button = Gtk.Button()
         self.add_gasto_button.set_child(icon)
@@ -143,7 +143,8 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         amigos_label.set_markup("<span size='xx-large' weight='bold'>AMIGOS</span>")
         amigos_box.append(amigos_label)
 
-        scrolled_window_amigos = Gtk.ScrolledWindow(vexpand=True, hscrollbar_policy='never')
+        scrolled_window_amigos = Gtk.ScrolledWindow(vexpand=True)
+        scrolled_window_amigos.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.lista_amigos = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
         self.lista_amigos.get_style_context().add_class("boxed-list")
         scrolled_window_amigos.set_child(self.lista_amigos)
@@ -154,7 +155,7 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         
         try:
             error_image = Gtk.Image.new_from_file("../assets/images/wifi-off.png")
-            error_image.set_pixel_size(64)
+            error_image.set_pixel_size(128)
             error_box.append(error_image)
         except GLib.Error as e:
             print(f"Error al cargar la imagen de error: {e}")
@@ -280,7 +281,6 @@ class App(Gtk.Application):
         self.win = None
 
     def do_activate(self):
-        # La importación se hace aquí para evitar importaciones circulares si es necesario
         from presenter import Presenter
         if not self.win:
             self.win = VistaPrincipal(application=self)
