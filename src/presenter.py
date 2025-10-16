@@ -29,7 +29,6 @@ class Presenter:
         finally:
              self.vista.show_loading(False)
 
-
 # --- Logica para ver detalles
 
     def on_retry_clicked(self, widget):
@@ -118,6 +117,42 @@ class Presenter:
                 self.cargar_datos_principales()
             else:
                 self.vista.show_loading(False)
+                self.vista.show_connection_error(True)
+        finally:
+            self.vista.show_loading(False)
+    
+
+    def on_add_aporte_clicked(self, gasto_id: int, row_widget: 'GastoRow'):
+        print(f"PRESENTER: Petición para añadir aporte al gasto ID {gasto_id}")
+        self.vista.show_loading(True)
+        try:
+            gasto_completo = self.modelo.get_gasto_details(gasto_id)
+
+            if gasto_completo:
+                importe_pagado = gasto_completo.credit_balance
+                importe_total = gasto_completo.amount
+                importe_restante = importe_total - importe_pagado
+                importe_maximo_aporte = max(0.01, importe_restante) 
+
+                print(f"PRESENTER: Importe total: {importe_total}, Pagado: {importe_pagado}, Restante: {importe_restante}")
+
+                row_widget.show_add_aporte_view(
+                    gasto_completo.id,
+                    gasto_completo.friends,
+                    importe_maximo_aporte  # Usamos el valor calculado
+                )
+            else:
+                self.vista.show_connection_error(True)
+        finally:
+            self.vista.show_loading(False)
+
+    def on_save_new_aporte(self, gasto_id: int, amigo_id: int, amount: float):
+        print(f"PRESENTER: Guardando nuevo aporte para gasto {gasto_id}")
+        self.vista.show_loading(True)
+        try:
+            if self.modelo.add_aporte_a_gasto(gasto_id, amigo_id, amount):
+                self.cargar_datos_principales()
+            else:
                 self.vista.show_connection_error(True)
         finally:
             self.vista.show_loading(False)

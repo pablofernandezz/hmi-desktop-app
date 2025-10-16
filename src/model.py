@@ -26,7 +26,6 @@ class Amigo:
     def saldo(self):
         return self.credit_balance - self.debit_balance
 
-
 ### Clase de lógica de negocio
 class Model: 
     def __init__(self):
@@ -197,3 +196,19 @@ class Model:
             self.add_amigo_a_gasto(nuevo_gasto_id, friend_id)
 
         return True
+    
+    def add_aporte_a_gasto(self, gasto_id: int, amigo_id: int, amount: float) -> bool:
+        """Envia una petición a la API para registrar un nuevo aporte."""
+        print(f"MODELO: Añadiendo aporte de {amount}€ por amigo {amigo_id} al gasto {gasto_id}")
+        url = f"{self.api_url}/expenses/{gasto_id}/contributions"
+        payload = {"friend_id": amigo_id, "amount": amount}
+        try:
+            response = requests.post(url, json=payload)
+            response.raise_for_status()
+            print("MODELO: Aporte añadido con éxito.")
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al añadir el aporte: {e}")
+            if e.response is not None:
+                print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
+            return False

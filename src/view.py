@@ -53,19 +53,27 @@ class DialogoGasto(Gtk.Dialog):
 
         self.connect("response", self._on_response)
 
+    def _show_error_dialog(self, message: str):
+        """Crea y muestra un diálogo de error estándar con un mensaje."""
+        error_dialog = Gtk.MessageDialog(
+            transient_for=self,
+            modal=True,
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text=message
+        )
+        error_dialog.connect("response", lambda d, r: d.destroy())
+        error_dialog.present()
+
     def _on_response(self, dialog, response_id):
         if response_id == Gtk.ResponseType.OK:
             description = self.entry_desc.get_text().strip()
+            amount = self.entry_importe.get_value()
+
             if not description:
-                error_dialog = Gtk.MessageDialog(
-                    transient_for=self,
-                    modal=True,
-                    message_type=Gtk.MessageType.ERROR,
-                    buttons=Gtk.ButtonsType.OK,
-                    text="El campo 'Descripción' no puede estar vacío."
-                )
-                error_dialog.connect("response", lambda d, r: d.destroy())
-                error_dialog.present()
+                self._show_error_dialog("El campo 'Descripción' no puede estar vacío.")
+            elif amount <= 0:
+                self._show_error_dialog("El importe debe ser mayor que cero.")
             else:
                 form_data = self.get_form_data()
                 if self.on_accept_callback:
@@ -272,7 +280,7 @@ class GastoRow(Gtk.Box):
         info_label = Gtk.Label(label=f"<b>{gasto.description}</b>\nImporte Total: {gasto.amount:.2f}€", xalign=0, hexpand=True, use_markup=True)
         
         buttons_box = Gtk.Box(spacing=5, halign=Gtk.Align.END)
-        self.details_button = Gtk.Button.new_from_icon_name("go-down-symbolic") # Botón para desplegar
+        self.details_button = Gtk.Button.new_from_icon_name("go-down-symbolic")
         modify_button = Gtk.Button.new_from_icon_name("document-edit-symbolic")
         delete_button = Gtk.Button.new_from_icon_name("user-trash-symbolic")
         delete_button.get_style_context().add_class("destructive-action")
@@ -323,8 +331,11 @@ class GastoRow(Gtk.Box):
         details_grid.attach(Gtk.Label(label="<b>Amigos:</b>", use_markup=True, xalign=0), 0, 4, 1, 1)
         details_grid.attach(Gtk.Label(label=nombres_amigos, xalign=0, wrap=True), 1, 4, 1, 1)
 
-        # (El botón de Aporte se mantiene igual)
         aporte_button = Gtk.Button(label="Realizar Aporte")
+        if not gasto_con_amigos.friends:
+            aporte_button.set_sensitive(False)
+        else:
+            aporte_button.connect('clicked', lambda w: self.presenter.on_add_aporte_clicked(self.gasto.id, self))        
         details_grid.attach(aporte_button, 0, 5, 2, 1)
 
         self.revealer.set_child(details_grid)
@@ -381,6 +392,39 @@ class GastoRow(Gtk.Box):
             entry_desc.get_text(),
             spin_importe.get_value(),
             {amigo_id: cb.get_active() for amigo_id, cb in amigos_checkboxes.items()}
+        ))
+
+        self.revealer.set_child(edit_grid)
+        self.revealer.set_reveal_child(True)
+
+    def show_add_aporte_view(self, gasto_id: int, amigos_del_gasto: List[Amigo], importe_maximo: float):
+        edit_grid = Gtk.Grid(margin_start=20, margin_bottom=10, row_spacing=10, column_spacing=10)
+        
+        edit_grid.attach(Gtk.Label(label="Amigo que aporta:"), 0, 0, 1, 1)
+        combo_amigos = Gtk.ComboBoxText()
+        for amigo in amigos_del_gasto: # Usa la lista de amigos pasada
+            combo_amigos.append(str(amigo.id), amigo.name)
+        combo_amigos.set_active(0)
+        edit_grid.attach(combo_amigos, 1, 0, 1, 1)
+
+        edit_grid.attach(Gtk.Label(label="Importe (€):"), 0, 1, 1, 1)
+        spin_importe = Gtk.SpinButton.new_with_range(0.01, importe_maximo, 5.00)
+        spin_importe.set_digits(2)
+        spin_importe.set_value(min(1.0, importe_maximo))         
+        edit_grid.attach(spin_importe, 1, 1, 1, 1)
+
+        buttons_box = Gtk.Box(spacing=10, halign=Gtk.Align.END)
+        save_button = Gtk.Button(label="Guardar Aporte")
+        cancel_button = Gtk.Button(label="Cancelar")
+        buttons_box.append(cancel_button)
+        buttons_box.append(save_button)
+        edit_grid.attach(buttons_box, 1, 2, 1, 1)
+
+        cancel_button.connect('clicked', lambda w: self.revealer.set_reveal_child(False))
+        save_button.connect('clicked', lambda w: self.presenter.on_save_new_aporte(
+            gasto_id, # Usa el ID pasado
+            int(combo_amigos.get_active_id()),
+            spin_importe.get_value()
         ))
 
         self.revealer.set_child(edit_grid)
