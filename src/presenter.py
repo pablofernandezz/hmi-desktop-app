@@ -5,10 +5,11 @@ class Presenter:
     def __init__(self, vista, modelo):
         self.vista = vista
         self.modelo = modelo 
+        self.vista.set_presenter(self)
+        self.vista.connect_signals()
 
     def iniciar(self):
         print("PRESENTER: Iniciando aplicación...")
-        self.vista.connect_signals()
         self.cargar_datos_principales()
 
     def cargar_datos_principales(self):
@@ -28,67 +29,131 @@ class Presenter:
         finally:
              self.vista.show_loading(False)
 
+
+# --- Logica para ver detalles
+
     def on_retry_clicked(self, widget):
         print("PRESENTER: El usuario ha pulsado Reintentar.")
         self.cargar_datos_principales() 
 
-    def on_add_gasto_clicked(self):
-        print("PRESENTER: El usuario quiere añadir un nuevo gasto.")
-        # Primero obtenemos todos los amigos para mostrarlos en el diálogo
-        todos_amigos = self.modelo.get_amigos()
-        if todos_amigos is None:
-            self.vista.show_connection_error(True)
-            return
-        
-        def al_aceptar(datos_gasto):
-        # obtenemos datos de gasto actual
+    def on_gasto_row_activated(self, listbox, row):
+        gasto_id = row.gasto_id
+        self.on_details_gasto_clicked(gasto_id)
+
+    def on_amigo_row_activated(self, listbox, row):
+        amigo_id = row.amigo_id
+        self.on_details_amigo_clicked(amigo_id)
+
+    def on_details_gasto_clicked(self, gasto_id: int):
+        print(f"PRESENTER: Usuario quiere ver detalles del gasto {gasto_id}")
         self.vista.show_loading(True)
         try:
-            #Extraer datos del gasto y amigos a asociar
-            amigos_a_asociar_ids = datos_gasto.pop('friend_ids', [])
-            datos_gasto['date'] = date.today().strftime("%Y-%m-%d")
-
-            #Crear el gasto
-            nuevo_gasto = self.modelo.create_gasto(datos_gasto)
-            if nuevo_gasto:
-                print(f"PRESENTER: Gasto creado con ID: {nuevo_gasto.id}")
-                #Asociar amigos a gasto
-                for amigo_id in amigos_a_asociar_ids:
-                    self.modelo.add_amigo_a_gasto(nuevo_gasto.id, amigo_id)
-                self.cargar_datos_principales()
+            gasto = self.modelo.get_gasto_details(gasto_id)
+            if gasto:
+                self.vista.show_gasto_details(gasto)
             else:
-                self.vista.show_loading(False)
-                self.vista.show_connection_error(True)
-        finally:   
-            self.vista.show_loading(False)
-
-        self.vista.mostrar_dialogo_gasto(
-            todos_amigos=todos_amigos, 
-            on_accept_callback=al_aceptar
-        )
-
-    def on_modify_gasto_clicked(self, gasto_id: int, datos_nuevos: dict):
-        print(f"PRESENTER: El usuario quiere modificar el gasto {gasto_id}.")
-        self.vista.show_loading(True)
-        try:
-            gasto_actual = self.modelo.get_gasto_details(gasto_id)
-            if not gasto_actual:
-                self.vista.show_connection_error(True)
-                return
-            
-            datos_gasto_basico = {
-                "description": datos_nuevos["description"],
-                "amount": datos_nuevos["amount"],
-                "date": gasto_actual.date
-            }
-            if self.modelo.update_gasto(gasto_id, datos_gasto_basico):
-                self.cargar_datos_principales()
-            else:
-                self.vista.show_loading(False)
+                print(f"PRESENTER: No se pudo obtener la información del gasto {gasto_id}.")
                 self.vista.show_connection_error(True)
         finally:
             self.vista.show_loading(False)
+
+
+    def on_details_amigo_clicked(self, amigo_id: int):
+        print(f"PRESENTER: Usuario quiere ver detalles del amigo {amigo_id}")
+        self.vista.show_loading(True)
+        try:
+            amigo = self.modelo.get_amigo_details(amigo_id)
+            gastos_asociados = self.modelo.get_gastos_por_amigo(amigo_id)
+            if amigo and gastos_asociados is not None:
+                self.vista.show_amigo_details(amigo, gastos_asociados)
+            else:
+                print(f"PRESENTER: No se pudo obtener la información del amigo {amigo_id}.")
+                self.vista.show_connection_error(True)
+        finally:
+                self.vista.show_loading(False)
+
+
+# --- Logica para añadir, modificar y eliminar gasto
+    def on_add_gasto_clicked(self):
+        print(f"PRESENTER: El usuario quiere añadir un nuevo gasto.")
+
+        def al_aceptar(datos_gasto):
+            datos_gasto['date'] = date.today().strftime("%Y-%m-%d")
+            datos_gasto.pop('friend_ids', None) 
+            print(f"PRESENTER: Enviando al modelo los datos completos: {datos_gasto}")
+
+            self.vista.show_loading(True)
+            try:
+                if self.modelo.create_gasto(datos_gasto):
+                    self.cargar_datos_principales()
+                else:
+                    self.vista.show_loading(False) # Oculta la carga
+                    self.vista.show_connection_error(True) # Muestra el error
+            finally:
+                self.vista.show_loading(False)
+
+        self.vista.mostrar_dialogo_gasto(
+            amigos=[], 
+            on_accept_callback=al_aceptar
+        )
     
+    def on_modify_gasto_clicked(self, gasto_id: int):
+        print(f"PRESENTER: El usuario quiere modificar el gasto {gasto_id}.")
+        # obtenemos datos de gasto actual
+        self.vista.show_loading(True)
+        try:
+            gasto_actual = self.modelo.get_gasto_details(gasto_id)
+            todos_amigos = self.modelo.get_amigos()
+        finally:
+            self.vista.show_loading(False)
+
+
+        if not gasto_actual or not todos_amigos:
+            print("PRESENTER: No se pudieron obtener los datos para modificar el gasto.")
+            self.vista.show_connection_error(True)
+            return
+        
+        def al_aceptar_modificacion(datos_nuevos):
+            self.vista.show_loading(True)
+
+            try:
+                ids_amigos_originales = {amigo.id for amigo in gasto_actual.friends}
+                ids_amigos_nuevos = set(datos_nuevos['friend_ids'])
+
+                #balance nuevos de amigos
+                ids_anadir = ids_amigos_nuevos - ids_amigos_originales
+                ids_quitar = ids_amigos_originales - ids_amigos_nuevos
+
+                print(f"PRESENTER: Amigos a añadir: {ids_anadir}")
+                print(f"PRESENTER: Amigos a quitar: {ids_quitar}")
+
+                #añadir/quitar amigos del gasto
+                for amigo_id in ids_anadir:
+                    self.modelo.add_amigo_a_gasto(gasto_id, amigo_id)
+                for amigo_id in ids_quitar:
+                    self.modelo.remove_amigo_de_gasto(gasto_id, amigo_id)
+
+                #actualizar datos básicos del gasto
+                datos_gasto_bassico = {
+                    "description": datos_nuevos["description"],
+                    "amount": datos_nuevos["amount"],
+                    "date": gasto_actual.date  # La fecha no se modifica
+                }
+            
+                #actualizar gasto si fue correcto; si no, mostrar error
+                if self.modelo.update_gasto(gasto_id, datos_gasto_bassico):
+                    self.cargar_datos_principales()
+                else:
+                    self.vista.show_loading(False)
+                    self.vista.show_connection_error(True)
+            finally:
+                self.vista.show_loading(False)
+
+        self.vista.mostrar_dialogo_gasto(
+            todos_amigos,
+            on_accept_callback=al_aceptar_modificacion,
+            gasto_existente=gasto_actual
+        )
 
     def on_delete_gasto_clicked(self, gasto_id: int):
         print(f"PRESENTER: El usuario quiere eliminar el gasto {gasto_id}.")
@@ -97,6 +162,7 @@ class Presenter:
     def on_confirm_delete(self, gasto_id: int):
         self.vista.show_loading(True)
         try:
+            # La vista llama a este método solo si el usuario confirma
             if self.modelo.delete_gasto(gasto_id):
                 self.cargar_datos_principales()
             else:
