@@ -72,18 +72,10 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         header = Gtk.HeaderBar()
         self.set_titlebar(header)
 
-        menu_button = Gtk.MenuButton()
-        menu_button.set_icon_name("open-menu-symbolic")
-        header.pack_end(menu_button)
-
-        menu_popover = Gtk.PopoverMenu()
-        menu_popover.set_has_arrow(False)
-        menu_button.set_popover(menu_popover)
-        
-        about_button=Gtk.Button(label="Acerca de...")
+        about_button = Gtk.Button.new_from_icon_name("help-about-symbolic") 
         about_button.connect('clicked', self.on_about_clicked)
-        menu_popover.set_child(about_button)
-
+        header.pack_end(about_button)
+        
         #contenido principal
         overlay = Gtk.Overlay()
         self.set_child(overlay)
@@ -106,13 +98,14 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         title_box_gastos = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         gastos_label = Gtk.Label(xalign=0, use_markup=True)
         gastos_label.set_markup("<span size='xx-large' weight='bold'>GASTOS</span>")
-        gastos_box.append(gastos_label)
+        gastos_label.set_hexpand(True)
+        title_box_gastos.append(gastos_label)
 
         icon= Gtk.Image.new_from_icon_name("list-add-symbolic")
         icon.set_pixel_size(24)
         self.add_gasto_button = Gtk.Button()
         self.add_gasto_button.set_child(icon)
-        self.add_gasto_button.set_halign(Gtk.Align.START)
+        self.add_gasto_button.set_halign(Gtk.Align.END)
         title_box_gastos.append(self.add_gasto_button)
         gastos_box.append(title_box_gastos)
 
@@ -154,12 +147,13 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         about.set_transient_for(self)
         about.set_modal(True)
         about.set_program_name("SplitWithMe")
-        about.set_version("1.0")
+        about.set_version("Version 1.0")
         about.set_authors(["Pablo Fernández Martí", "Joel Ramos Carro", "Nicolás Dominguez Souto"])
-        about.set_comments("Aplicación de escritorio para la gestión de gastos compartidos.")
+        about.set_comments("Aplicación de escritorio para la gestión de gastos compartidos con amigos.")
         try:
-            logo = Gtk.Picture.new_for_filename("../assets/images/logo.png")
-            about.set_logo(logo.get_paintable())
+            image = Gtk.Image.new_from_file("../assets/images/logo.png")
+            image.set_pixel_size(200)
+            about.set_logo(image.get_paintable())
         except GLib.Error as e:
             print(f"Error al cargar logo para AboutDialog: {e}")
         about.present()
@@ -188,8 +182,8 @@ class VistaPrincipal(Gtk.ApplicationWindow):
     def mostrar_amigos(self, amigos: List[Amigo]):
         while (child := self.lista_amigos.get_row_at_index(0)): self.lista_amigos.remove(child)
         for amigo in amigos:
-            label = Gtk.Label(label=f"<b>{amigo.name}</b>\nSaldo: {amigo.saldo:.2f}€", xalign=0, hexpand=True, use_markup=True)
-            self.lista_amigos.append(label)
+            row_widget = AmigoRow(amigo, self.presenter)
+            self.lista_amigos.append(row_widget)    
 
     def show_gasto_details(self, gasto: Gasto):
         dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=f"Detalles del Gasto {gasto.description}")
@@ -286,16 +280,25 @@ class GastoRow(Gtk.Box):
         # Muestra la información detallada
         details_grid = Gtk.Grid(margin_start=20, margin_bottom=10, row_spacing=5, column_spacing=10)
         nombres_amigos = ", ".join([amigo.name for amigo in gasto_con_amigos.friends]) or "Ninguno"
-        
-        details_grid.attach(Gtk.Label(label="<b>Fecha:</b>", use_markup=True, xalign=0), 0, 0, 1, 1)
-        details_grid.attach(Gtk.Label(label=gasto_con_amigos.date, xalign=0), 1, 0, 1, 1)
-        details_grid.attach(Gtk.Label(label="<b>Amigos:</b>", use_markup=True, xalign=0), 0, 1, 1, 1)
-        details_grid.attach(Gtk.Label(label=nombres_amigos, xalign=0, wrap=True), 1, 1, 1, 1)
+    
+        details_grid.attach(Gtk.Label(label="<b>Nombre del Gasto:</b>", use_markup=True, xalign=0), 0, 0, 1, 1)
+        details_grid.attach(Gtk.Label(label=gasto_con_amigos.description, xalign=0, wrap=True), 1, 0, 1, 1)
 
-        # Aquí iría la lógica para "realizar aporte"
+        details_grid.attach(Gtk.Label(label="<b>Importe Total:</b>", use_markup=True, xalign=0), 0, 1, 1, 1)
+        details_grid.attach(Gtk.Label(label=f"{gasto_con_amigos.amount:.2f}€", xalign=0), 1, 1, 1, 1)
+
+        details_grid.attach(Gtk.Label(label="<b>Fecha:</b>", use_markup=True, xalign=0), 0, 2, 1, 1)
+        details_grid.attach(Gtk.Label(label=gasto_con_amigos.date, xalign=0), 1, 2, 1, 1)
+        
+        details_grid.attach(Gtk.Label(label="<b>Número de Amigos:</b>", use_markup=True, xalign=0), 0, 3, 1, 1)
+        details_grid.attach(Gtk.Label(label=str(len(gasto_con_amigos.friends)), xalign=0), 1, 3, 1, 1)
+
+        details_grid.attach(Gtk.Label(label="<b>Amigos:</b>", use_markup=True, xalign=0), 0, 4, 1, 1)
+        details_grid.attach(Gtk.Label(label=nombres_amigos, xalign=0, wrap=True), 1, 4, 1, 1)
+
+        # (El botón de Aporte se mantiene igual)
         aporte_button = Gtk.Button(label="Realizar Aporte")
-        # aporte_button.connect('clicked', ...)
-        details_grid.attach(aporte_button, 0, 2, 2, 1)
+        details_grid.attach(aporte_button, 0, 5, 2, 1)
 
         self.revealer.set_child(details_grid)
         self.revealer.set_reveal_child(True)
@@ -304,34 +307,100 @@ class GastoRow(Gtk.Box):
         # Llama al presenter para que inicie el flujo de modificación
         self.presenter.on_modify_gasto_clicked(self.gasto.id, self)
 
-    def update_edit_view(self, todos_amigos: List[Amigo]):
-        # Muestra el formulario de edición
-        edit_grid = Gtk.Grid(margin_start=20, margin_bottom=10, row_spacing=5, column_spacing=10)
+    def update_edit_view(self, gasto_editar: Gasto, todos_amigos: List[Amigo]):
+        edit_grid = Gtk.Grid(margin_start=20, margin_bottom=10, row_spacing=10, column_spacing=10)
         
-        # ... construir el formulario con Entry, SpinButton, CheckButtons ...
-        # (similar a como se hacía en DialogoGasto)
-        
+        # Descripción
+        edit_grid.attach(Gtk.Label(label="Descripción:"), 0, 0, 1, 1)
+        entry_desc = Gtk.Entry(text=gasto_editar.description)
+        edit_grid.attach(entry_desc, 1, 0, 1, 1)
+
+        # Importe
+        edit_grid.attach(Gtk.Label(label="Importe (€):"), 0, 1, 1, 1)
+        spin_importe = Gtk.SpinButton.new_with_range(0, 10000, 0.01)
+        spin_importe.set_digits(2)
+        spin_importe.set_value(gasto_editar.amount)
+        edit_grid.attach(spin_importe, 1, 1, 1, 1)
+
+        # Amigos
+        label_amigos = Gtk.Label(label="Amigos:")
+        edit_grid.attach(label_amigos, 0, 2, 1, 1)
+        amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        amigos_checkboxes = {} 
+        ids_amigos_actuales = {amigo.id for amigo in gasto_editar.friends}
+        for amigo in todos_amigos:
+            cb = Gtk.CheckButton(label=amigo.name)
+            amigos_checkboxes[amigo.id] = cb
+            if amigo.id in ids_amigos_actuales:
+                cb.set_active(True) # Marcamos si el ID está en la lista
+            amigos_box.append(cb)
+        scrolled_window = Gtk.ScrolledWindow(height_request=150)
+        scrolled_window.set_child(amigos_box)
+        edit_grid.attach(scrolled_window, 1, 2, 1, 1)
+
+
+        # Botones de acción
+        buttons_box = Gtk.Box(spacing=10, halign=Gtk.Align.END)
         save_button = Gtk.Button(label="Guardar")
         cancel_button = Gtk.Button(label="Cancelar")
-        
-        # Conectar señales de save y cancel
-        # save_button.connect('clicked', ...)
+        buttons_box.append(cancel_button)
+        buttons_box.append(save_button)
+        edit_grid.attach(buttons_box, 1, 3, 1, 1)
+
+        # Conexiones
         cancel_button.connect('clicked', lambda w: self.revealer.set_reveal_child(False))
+        save_button.connect('clicked', lambda w: self.presenter.on_save_changes_clicked(
+            gasto_editar,
+            entry_desc.get_text(),
+            spin_importe.get_value(),
+            {amigo_id: cb.get_active() for amigo_id, cb in amigos_checkboxes.items()}
+        ))
 
         self.revealer.set_child(edit_grid)
         self.revealer.set_reveal_child(True)
 
+class AmigoRow(Gtk.Box):
+    def __init__(self, amigo: Amigo, presenter):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.amigo = amigo
+        self.presenter = presenter
+
+        main_row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
+        label = Gtk.Label(label=f"<b>{amigo.name}</b>\nSaldo: {amigo.saldo:.2f}€", xalign=0, hexpand=True, use_markup=True)
+        
+        self.details_button = Gtk.Button.new_from_icon_name("go-down-symbolic")
+        
+        main_row_box.append(label)
+        main_row_box.append(self.details_button)
+        self.append(main_row_box)
+        
+        self.revealer = Gtk.Revealer()
+        self.revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        self.append(self.revealer)
+
+        self.details_button.connect('clicked', self.on_details_clicked)
+
+    def on_details_clicked(self, widget):
+        is_revealed = self.revealer.get_child_revealed()
+        if not is_revealed:
+            self.presenter.on_details_amigo_clicked(self.amigo.id, self)
+        else:
+            self.revealer.set_reveal_child(False)
+
+    def show_details_view(self, amigo_con_detalles: Amigo, gastos_asociados: List[Gasto]):
+        details_grid = Gtk.Grid(margin_start=20, margin_bottom=10, row_spacing=5, column_spacing=10)
+        gastos_str = "\n".join([f"- {g.description}" for g in gastos_asociados]) or "Ninguno"
+        
+        details_grid.attach(Gtk.Label(label="<b>Crédito:</b>", use_markup=True, xalign=0), 0, 0, 1, 1)
+        details_grid.attach(Gtk.Label(label=f"{amigo_con_detalles.credit_balance:.2f}€", xalign=0), 1, 0, 1, 1)
+        details_grid.attach(Gtk.Label(label="<b>Débito:</b>", use_markup=True, xalign=0), 0, 1, 1, 1)
+        details_grid.attach(Gtk.Label(label=f"{amigo_con_detalles.debit_balance:.2f}€", xalign=0), 1, 1, 1, 1)
+        details_grid.attach(Gtk.Label(label="<b>Gastos:</b>", use_markup=True, xalign=0), 0, 2, 1, 1)
+        details_grid.attach(Gtk.Label(label=gastos_str, xalign=0, wrap=True), 1, 2, 1, 1)
+
+        self.revealer.set_child(details_grid)
+        self.revealer.set_reveal_child(True)
 
 class App(Gtk.Application):
-    def __init__(self, modelo, **kwargs):
+    def __init__(self, **kwargs):
         super().__init__(application_id="com.example.splitwithme", **kwargs)
-        self.modelo = modelo
-        self.win = None
-
-    def do_activate(self):
-        from presenter import Presenter
-        if not self.win:
-            self.win = VistaPrincipal(application=self)
-            presentador = Presenter(self.win, self.modelo)
-            presentador.iniciar()
-        self.win.present()

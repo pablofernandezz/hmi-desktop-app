@@ -5,13 +5,16 @@ from model import Model
 from presenter import Presenter
 
 def main():
-    modelo = Model()
-    app = App(modelo)
+    # App ya no necesita el modelo
+    app = App()
 
     def on_activate(application):
+        modelo = Model()
         win = VistaPrincipal(application=application)
         presentador = Presenter(win, modelo)
+        
         presentador.iniciar()
+        
         win.present()
     
     app.connect('activate', on_activate)

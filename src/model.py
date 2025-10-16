@@ -167,3 +167,33 @@ class Model:
             return False
 
             
+    def create_gasto_with_friends(self, datos_gasto: dict) -> bool:
+        friend_ids = datos_gasto.pop('friend_ids', [])
+    
+        # 1. Obtenemos los IDs de los gastos actuales
+        gastos_previos = self.get_gastos()
+        if gastos_previos is None: return False
+        ids_previos = {g.id for g in gastos_previos}
+
+        # 2. Creamos el gasto base
+        if not self.create_gasto(datos_gasto):
+            return False
+
+        # 3. Obtenemos la nueva lista de gastos para encontrar el ID del recién creado
+        gastos_nuevos = self.get_gastos()
+        if gastos_nuevos is None: return False
+        ids_nuevos = {g.id for g in gastos_nuevos}
+
+        # El nuevo ID es el que está en el conjunto nuevo pero no en el viejo
+        nuevos_ids_encontrados = ids_nuevos - ids_previos
+        if not nuevos_ids_encontrados:
+            print("MODELO: No se pudo determinar el ID del nuevo gasto.")
+            return False # Algo fue mal
+        
+        nuevo_gasto_id = nuevos_ids_encontrados.pop()
+
+        # 4. Añadimos los amigos al nuevo gasto
+        for friend_id in friend_ids:
+            self.add_amigo_a_gasto(nuevo_gasto_id, friend_id)
+
+        return True
