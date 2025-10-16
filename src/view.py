@@ -3,21 +3,14 @@
 import gi
 gi.require_version("Gtk", "4.0")
 from gi.repository import Gtk, GLib
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 from model import Gasto, Amigo
 
 class DialogoGasto(Gtk.Dialog):
     def __init__(self, parent, amigos: List[Amigo], on_accept_callback, gasto_existente: Optional[Gasto] = None):
         super().__init__(transient_for=parent, modal=True)
-        
         self.on_accept_callback = on_accept_callback
-
-        if gasto_existente:
-            self.set_title("Modificar Gasto")
-        else:
-            self.set_title("Añadir Gasto")
-
         self.add_buttons("_Cancelar", Gtk.ResponseType.CANCEL, "_Aceptar", Gtk.ResponseType.OK)
         self.amigos_checkboxes = {}
 
@@ -30,33 +23,21 @@ class DialogoGasto(Gtk.Dialog):
         grid.attach(self.entry_desc, 1, 0, 1, 1)
 
         grid.attach(Gtk.Label(label="Importe (€):"), 0, 1, 1, 1)
-        self.entry_importe = Gtk.SpinButton.new_with_range(0, 10000, 0.01)
+        self.entry_importe = Gtk.SpinButton.new_with_range(0, 999999, 5.00)
         self.entry_importe.set_digits(2)
         grid.attach(self.entry_importe, 1, 1, 1, 1)
 
-        if gasto_existente:
-            label_amigos = Gtk.Label(label="Amigos:")
-            grid.attach(label_amigos, 0, 2, 1, 1)
-            
-            amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-            for amigo in amigos:
-                checkbox = Gtk.CheckButton(label=amigo.name)
-                self.amigos_checkboxes[amigo.id] = checkbox
-                amigos_box.append(checkbox)
+        label_amigos = Gtk.Label(label="Amigos:")
+        grid.attach(label_amigos, 0, 2, 1, 1)
+        amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        for amigo in amigos:
+            cb = Gtk.CheckButton(label=amigo.name)
+            self.amigos_checkboxes[amigo.id] = cb
+            amigos_box.append(cb)
+        scrolled_window = Gtk.ScrolledWindow(height_request=150)
+        scrolled_window.set_child(amigos_box)
+        grid.attach(scrolled_window, 1, 2, 1, 1)
 
-            scrolled_window = Gtk.ScrolledWindow(height_request=150)
-            scrolled_window.set_child(amigos_box)
-            grid.attach(scrolled_window, 1, 2, 1, 1)
-
-            self.entry_desc.set_text(gasto_existente.description)
-            self.entry_importe.set_value(gasto_existente.amount)
-
-            if gasto_existente.friends:
-                ids_amigos_actuales = {amigo.id for amigo in gasto_existente.friends}
-                for amigo_id, checkbox in self.amigos_checkboxes.items():
-                    if amigo_id in ids_amigos_actuales:
-                        checkbox.set_active(True)
-        
         self.connect("response", self._on_response)
 
     def _on_response(self, dialog, response_id):
@@ -87,72 +68,75 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         self.presenter = p
 
     def build_ui(self):
+        #cabecera
+        header = Gtk.HeaderBar()
+        self.set_titlebar(header)
+
+        menu_button = Gtk.MenuButton()
+        menu_button.set_icon_name("open-menu-symbolic")
+        header.pack_end(menu_button)
+
+        menu_popover = Gtk.PopoverMenu()
+        menu_popover.set_has_arrow(False)
+        menu_button.set_popover(menu_popover)
+        
+        about_button=Gtk.Button(label="Acerca de...")
+        about_button.connect('clicked', self.on_about_clicked)
+        menu_popover.set_child(about_button)
+
+        #contenido principal
         overlay = Gtk.Overlay()
         self.set_child(overlay)
         self.spinner = Gtk.Spinner(spinning=False, visible=False, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, width_request=50, height_request=50)
         overlay.add_overlay(self.spinner)
 
-        root_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-        overlay.set_child(root_box)
-
-        #añadimos logo
-        try:
-            logo_image = Gtk.Image.new_from_file("../assets/images/logo.png")
-            logo_image.set_pixel_size(175)
-            #logo_image.set_margin_top(-100) los margenes negativos estan dando fallos
-            root_box.append(logo_image)
-        except GLib.Error as e:
-            print(f"Error al cargar el logo: {e}. Asegúrate de que la ruta es correcta.")
-            root_box.append(Gtk.Label(label="SplitWithMe"))
-
+        #stack para cambiar entre vista principal y error
         self.stack = Gtk.Stack()
         self.stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
-        root_box.append(self.stack)
-
+        overlay.set_child(self.stack)
+ 
+        # -- PANTALLA PRINCIPAL --
         main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20, margin_top=20, margin_bottom=20, margin_start=20, margin_end=20)
         self.stack.add_named(main_box, "main_content")
 
+        # panel de gastos
         gastos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, hexpand=True)
         main_box.append(gastos_box)
 
-        gastos_label = Gtk.Label(halign=Gtk.Align.CENTER, use_markup=True)
+        title_box_gastos = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        gastos_label = Gtk.Label(xalign=0, use_markup=True)
         gastos_label.set_markup("<span size='xx-large' weight='bold'>GASTOS</span>")
         gastos_box.append(gastos_label)
+
+        icon= Gtk.Image.new_from_icon_name("list-add-symbolic")
+        icon.set_pixel_size(24)
+        self.add_gasto_button = Gtk.Button()
+        self.add_gasto_button.set_child(icon)
+        self.add_gasto_button.set_halign(Gtk.Align.START)
+        title_box_gastos.append(self.add_gasto_button)
+        gastos_box.append(title_box_gastos)
 
         scrolled_window_gastos = Gtk.ScrolledWindow(vexpand=True)
         scrolled_window_gastos.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.lista_gastos = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
-        self.lista_gastos.get_style_context().add_class("boxed-list")
         scrolled_window_gastos.set_child(self.lista_gastos)
         gastos_box.append(scrolled_window_gastos)
 
-        icon = Gtk.Image.new_from_icon_name("list-add-symbolic")
-        
-        icon.set_pixel_size(32) 
-
-        self.add_gasto_button = Gtk.Button()
-        self.add_gasto_button.set_child(icon)
-        self.add_gasto_button.set_halign(Gtk.Align.CENTER)
-        self.add_gasto_button.set_valign(Gtk.Align.CENTER)
-        gastos_box.append(self.add_gasto_button)
-
+        # panel de amigos
         amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, hexpand=True)
         main_box.append(amigos_box)
-
-        amigos_label = Gtk.Label(halign=Gtk.Align.CENTER, use_markup=True)
+        amigos_label = Gtk.Label(xalign=0, use_markup=True)
         amigos_label.set_markup("<span size='xx-large' weight='bold'>AMIGOS</span>")
         amigos_box.append(amigos_label)
-
         scrolled_window_amigos = Gtk.ScrolledWindow(vexpand=True)
         scrolled_window_amigos.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         self.lista_amigos = Gtk.ListBox(selection_mode=Gtk.SelectionMode.NONE)
-        self.lista_amigos.get_style_context().add_class("boxed-list")
         scrolled_window_amigos.set_child(self.lista_amigos)
-        amigos_box.append(scrolled_window_amigos)
+        amigos_box.append(scrolled_window_amigos) 
 
+        # -- PANTALLA DE ERROR DE CONEXIÓN --
         error_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=20, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, vexpand=True)
         self.stack.add_named(error_box, "error_screen")
-        
         try:
             error_image = Gtk.Image.new_from_file("../assets/images/wifi-off.png")
             error_image.set_pixel_size(128)
@@ -162,14 +146,26 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         
         error_label = Gtk.Label(label="No es posible conectarse con el servidor")
         error_box.append(error_label)
-
         self.retry_button = Gtk.Button(label="Reintentar")
         error_box.append(self.retry_button)
 
+    def on_about_clicked(self, widget):
+        about = Gtk.AboutDialog()
+        about.set_transient_for(self)
+        about.set_modal(True)
+        about.set_program_name("SplitWithMe")
+        about.set_version("1.0")
+        about.set_authors(["Pablo Fernández Martí", "Joel Ramos Carro", "Nicolás Dominguez Souto"])
+        about.set_comments("Aplicación de escritorio para la gestión de gastos compartidos.")
+        try:
+            logo = Gtk.Picture.new_for_filename("../assets/images/logo.png")
+            about.set_logo(logo.get_paintable())
+        except GLib.Error as e:
+            print(f"Error al cargar logo para AboutDialog: {e}")
+        about.present()
+
     def connect_signals(self):
         self.add_gasto_button.connect('clicked', lambda w: self.presenter.on_add_gasto_clicked())
-        self.lista_gastos.connect('row-activated', self.presenter.on_gasto_row_activated)
-        self.lista_amigos.connect('row-activated', self.presenter.on_amigo_row_activated)
         self.retry_button.connect('clicked', self.presenter.on_retry_clicked)
 
     def show_connection_error(self, visible: bool):
@@ -186,47 +182,14 @@ class VistaPrincipal(Gtk.ApplicationWindow):
     def mostrar_gastos(self, gastos: List[Gasto]):
         while (child := self.lista_gastos.get_row_at_index(0)): self.lista_gastos.remove(child)
         for gasto in gastos:
-            row = Gtk.ListBoxRow() 
-            row.set_activatable(True) 
-            row.gasto_id = gasto.id
-            
-            frame = Gtk.Frame(margin_bottom=5)
-            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
-            frame.set_child(row_box)
-            row.set_child(frame) 
-            
-            info_label = Gtk.Label(label=f"<b>{gasto.description}</b>\n{gasto.amount:.2f}€", xalign=0, hexpand=True, use_markup=True)
-            buttons_box = Gtk.Box(spacing=5, halign=Gtk.Align.END)
-            
-            modify_button = Gtk.Button.new_from_icon_name("document-edit-symbolic")
-            modify_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_modify_gasto_clicked(g_id))
-            
-            delete_button = Gtk.Button.new_from_icon_name("user-trash-symbolic")
-            delete_button.get_style_context().add_class("destructive-action")
-            delete_button.connect('clicked', lambda w, g_id=gasto.id: self.presenter.on_delete_gasto_clicked(g_id))
-
-            buttons_box.append(modify_button)
-            buttons_box.append(delete_button)
-
-            row_box.append(info_label)
-            row_box.append(buttons_box)
-            self.lista_gastos.append(row)
+            row_widget = GastoRow(gasto, self.presenter)
+            self.lista_gastos.append(row_widget)
 
     def mostrar_amigos(self, amigos: List[Amigo]):
         while (child := self.lista_amigos.get_row_at_index(0)): self.lista_amigos.remove(child)
         for amigo in amigos:
-            row = Gtk.ListBoxRow()
-            row.set_activatable(True)
-            row.amigo_id = amigo.id
-            
-            frame = Gtk.Frame(margin_bottom=5)
-            row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
-            frame.set_child(row_box)
-            row.set_child(frame) 
-            
             label = Gtk.Label(label=f"<b>{amigo.name}</b>\nSaldo: {amigo.saldo:.2f}€", xalign=0, hexpand=True, use_markup=True)
-            row_box.append(label)
-            self.lista_amigos.append(row)
+            self.lista_amigos.append(label)
 
     def show_gasto_details(self, gasto: Gasto):
         dialog = Gtk.MessageDialog(transient_for=self, modal=True, message_type=Gtk.MessageType.INFO, buttons=Gtk.ButtonsType.OK, text=f"Detalles del Gasto {gasto.description}")
@@ -273,6 +236,91 @@ class VistaPrincipal(Gtk.ApplicationWindow):
     def _on_delete_dialog_response(self, dialog, response_id, gasto_id):
         dialog.destroy()
         if response_id == Gtk.ResponseType.YES: self.presenter.on_confirm_delete(gasto_id)
+
+
+
+class GastoRow(Gtk.Box):
+    """Widget de fila personalizado para un Gasto, con su propio Revealer."""
+    def __init__(self, gasto: Gasto, presenter):
+        super().__init__(orientation=Gtk.Orientation.VERTICAL)
+        self.gasto = gasto
+        self.presenter = presenter
+
+        # Caja principal visible
+        main_row_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10, margin_top=8, margin_bottom=8, margin_start=8, margin_end=8)
+        info_label = Gtk.Label(label=f"<b>{gasto.description}</b>\nImporte Total: {gasto.amount:.2f}€", xalign=0, hexpand=True, use_markup=True)
+        
+        buttons_box = Gtk.Box(spacing=5, halign=Gtk.Align.END)
+        self.details_button = Gtk.Button.new_from_icon_name("go-down-symbolic") # Botón para desplegar
+        modify_button = Gtk.Button.new_from_icon_name("document-edit-symbolic")
+        delete_button = Gtk.Button.new_from_icon_name("user-trash-symbolic")
+        delete_button.get_style_context().add_class("destructive-action")
+        
+        buttons_box.append(self.details_button)
+        buttons_box.append(modify_button)
+        buttons_box.append(delete_button)
+        main_row_box.append(info_label)
+        main_row_box.append(buttons_box)
+        
+        self.append(main_row_box)
+        
+        # Revealer para detalles y edición
+        self.revealer = Gtk.Revealer()
+        self.revealer.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+        self.append(self.revealer)
+
+        # Conexiones
+        self.details_button.connect('clicked', self.on_details_clicked)
+        modify_button.connect('clicked', lambda w: self.show_edit_view())
+        delete_button.connect('clicked', lambda w: self.presenter.on_delete_gasto_clicked(self.gasto.id))
+
+    def on_details_clicked(self, widget):
+        is_revealed = self.revealer.get_child_revealed()
+        if not is_revealed:
+            # Pedimos los detalles actualizados al presenter
+            self.presenter.on_details_gasto_clicked(self.gasto.id, self)
+        else:
+            self.revealer.set_reveal_child(False)
+
+    def show_details_view(self, gasto_con_amigos: Gasto):
+        # Muestra la información detallada
+        details_grid = Gtk.Grid(margin_start=20, margin_bottom=10, row_spacing=5, column_spacing=10)
+        nombres_amigos = ", ".join([amigo.name for amigo in gasto_con_amigos.friends]) or "Ninguno"
+        
+        details_grid.attach(Gtk.Label(label="<b>Fecha:</b>", use_markup=True, xalign=0), 0, 0, 1, 1)
+        details_grid.attach(Gtk.Label(label=gasto_con_amigos.date, xalign=0), 1, 0, 1, 1)
+        details_grid.attach(Gtk.Label(label="<b>Amigos:</b>", use_markup=True, xalign=0), 0, 1, 1, 1)
+        details_grid.attach(Gtk.Label(label=nombres_amigos, xalign=0, wrap=True), 1, 1, 1, 1)
+
+        # Aquí iría la lógica para "realizar aporte"
+        aporte_button = Gtk.Button(label="Realizar Aporte")
+        # aporte_button.connect('clicked', ...)
+        details_grid.attach(aporte_button, 0, 2, 2, 1)
+
+        self.revealer.set_child(details_grid)
+        self.revealer.set_reveal_child(True)
+
+    def show_edit_view(self):
+        # Llama al presenter para que inicie el flujo de modificación
+        self.presenter.on_modify_gasto_clicked(self.gasto.id, self)
+
+    def update_edit_view(self, todos_amigos: List[Amigo]):
+        # Muestra el formulario de edición
+        edit_grid = Gtk.Grid(margin_start=20, margin_bottom=10, row_spacing=5, column_spacing=10)
+        
+        # ... construir el formulario con Entry, SpinButton, CheckButtons ...
+        # (similar a como se hacía en DialogoGasto)
+        
+        save_button = Gtk.Button(label="Guardar")
+        cancel_button = Gtk.Button(label="Cancelar")
+        
+        # Conectar señales de save y cancel
+        # save_button.connect('clicked', ...)
+        cancel_button.connect('clicked', lambda w: self.revealer.set_reveal_child(False))
+
+        self.revealer.set_child(edit_grid)
+        self.revealer.set_reveal_child(True)
+
 
 class App(Gtk.Application):
     def __init__(self, modelo, **kwargs):
