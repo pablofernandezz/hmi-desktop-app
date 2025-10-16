@@ -12,14 +12,24 @@ class DialogoGasto(Gtk.Dialog):
         super().__init__(transient_for=parent, modal=True)
         self.on_accept_callback = on_accept_callback
         self.add_buttons("_Cancelar", Gtk.ResponseType.CANCEL, "_Aceptar", Gtk.ResponseType.OK)
+        boton_aceptar = self.get_widget_for_response(Gtk.ResponseType.OK)
+        boton_cancelar = self.get_widget_for_response(Gtk.ResponseType.CANCEL)
+        boton_aceptar.set_margin_end(15)
+        boton_cancelar.set_margin_end(5)
+        boton_aceptar.set_margin_bottom(10)
+        boton_cancelar.set_margin_bottom(10)
+        
+        self.set_default_size(400, 450)
+
         self.amigos_checkboxes = {}
 
         content_area = self.get_content_area()
-        grid = Gtk.Grid(margin_start=10, margin_end=10, margin_top=10, margin_bottom=10, row_spacing=10, column_spacing=10)
+        grid = Gtk.Grid(margin_start=20, margin_end=20, margin_top=20, margin_bottom=10, row_spacing=15, column_spacing=10)
         content_area.append(grid)
 
         grid.attach(Gtk.Label(label="Descripción:"), 0, 0, 1, 1)
         self.entry_desc = Gtk.Entry()
+        self.entry_desc.set_hexpand(True)
         grid.attach(self.entry_desc, 1, 0, 1, 1)
 
         grid.attach(Gtk.Label(label="Importe (€):"), 0, 1, 1, 1)
@@ -28,13 +38,16 @@ class DialogoGasto(Gtk.Dialog):
         grid.attach(self.entry_importe, 1, 1, 1, 1)
 
         label_amigos = Gtk.Label(label="Amigos:")
+        label_amigos.set_valign(Gtk.Align.START)
         grid.attach(label_amigos, 0, 2, 1, 1)
-        amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
         for amigo in amigos:
             cb = Gtk.CheckButton(label=amigo.name)
             self.amigos_checkboxes[amigo.id] = cb
             amigos_box.append(cb)
         scrolled_window = Gtk.ScrolledWindow(height_request=150)
+        scrolled_window.set_vexpand(True)
+        scrolled_window.set_hexpand(True)
         scrolled_window.set_child(amigos_box)
         grid.attach(scrolled_window, 1, 2, 1, 1)
 
@@ -42,10 +55,24 @@ class DialogoGasto(Gtk.Dialog):
 
     def _on_response(self, dialog, response_id):
         if response_id == Gtk.ResponseType.OK:
-            form_data = self.get_form_data()
-            if self.on_accept_callback:
-                self.on_accept_callback(form_data)
-        self.destroy()
+            description = self.entry_desc.get_text().strip()
+            if not description:
+                error_dialog = Gtk.MessageDialog(
+                    transient_for=self,
+                    modal=True,
+                    message_type=Gtk.MessageType.ERROR,
+                    buttons=Gtk.ButtonsType.OK,
+                    text="El campo 'Descripción' no puede estar vacío."
+                )
+                error_dialog.connect("response", lambda d, r: d.destroy())
+                error_dialog.present()
+            else:
+                form_data = self.get_form_data()
+                if self.on_accept_callback:
+                    self.on_accept_callback(form_data)
+                self.destroy()
+        else:
+            self.destroy()
 
     def get_form_data(self) -> dict:
         amigos_seleccionados = [amigo_id for amigo_id, cb in self.amigos_checkboxes.items() if cb.get_active()]
