@@ -3,7 +3,6 @@ import requests
 
 ### Modelos de datos
 class Gasto:
-    # CAMBIO AQUÍ: 'friends' es ahora opcional
     def __init__(self, id, description, amount, date=None, credit_balance=0, num_friends=0, friends=None, **kwargs):
         self.id = id 
         self.description = description
@@ -11,11 +10,9 @@ class Gasto:
         self.date = date
         self.credit_balance = credit_balance
         self.num_friends = num_friends
-        # Si no se pasan amigos, se inicializa como una lista vacía
         self.friends = friends if friends is not None else []
 
 class Amigo: 
-    # CAMBIO AQUÍ: Los parámetros ahora coinciden con la API
     def __init__(self, id, name, credit_balance, debit_balance):
         self.id = id 
         self.name = name
@@ -111,14 +108,13 @@ class Model:
     def add_amigo_a_gasto(self, gasto_id: int, amigo_id: int) -> bool:
         print(f"MODELO: Asociando amigo {amigo_id} al gasto {gasto_id}...")
         try:
-            response = requests.post(f"{self.api_url}/expenses/{gasto_id}/friends", params={"friend_id": amigo_id})
+            url = f"{self.api_url}/expenses/{gasto_id}/friends" 
+            response = requests.post(url, params={"friend_id": amigo_id})
             response.raise_for_status()
             print(f"MODELO: Amigo {amigo_id} asociado al gasto {gasto_id} con éxito.")
             return True
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al asociar amigo {amigo_id} al gasto {gasto_id}: {e}")
-            if e.response is not None:
-                print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
             return False
     
     def remove_amigo_de_gasto(self, gasto_id: int, amigo_id: int) -> bool:
@@ -130,21 +126,17 @@ class Model:
             return True
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al desasociar amigo {amigo_id} del gasto {gasto_id}: {e}")
-            if e.response is not None:
-                print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
             return False
 
-    #Métodos añadidos para creación, modificación y eliminación de gastos
-
-    def create_gasto(self, datos_gasto: dict) -> bool:
+    def create_gasto(self, datos_gasto: dict) -> Optional[Gasto]:
         print(f"MODELO: Creando nuevo gasto con datos: {datos_gasto}")
         try:
             response = requests.post(f"{self.api_url}/expenses", json=datos_gasto)
             response.raise_for_status()
-            return True
+            return Gasto(**response.json)
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al crear el gasto: {e}")
-            return False
+            return None
 
     def update_gasto(self, gasto_id: int, datos_gasto: dict) -> bool:
         print(f"MODELO: Actualizando gasto {gasto_id} con datos: {datos_gasto}")
