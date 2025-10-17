@@ -1,7 +1,5 @@
-# model.py 
 import requests
 
-### Modelos de datos
 class Gasto:
     def __init__(self, id, description, amount, date=None, credit_balance=0, num_friends=0, friends: list['AmigoEnGasto'] = None, **kwargs):
         self.id = id 
@@ -10,11 +8,9 @@ class Gasto:
         self.date = date
         self.credit_balance = credit_balance
         self.num_friends = num_friends
-        # Si no se pasan amigos, se inicializa como una lista vacía
         self.friends = friends if friends is not None else []
 
 class Amigo: 
-    # CAMBIO AQUÍ: Los parámetros ahora coinciden con la API
     def __init__(self, id, name, credit_balance, debit_balance):
         self.id = id 
         self.name = name
@@ -26,14 +22,12 @@ class Amigo:
         return self.credit_balance - self.debit_balance
 
 class AmigoEnGasto: 
-    """Representa a un amigo dentro del contexto de un gasto específico."""
     def __init__(self, id, name, credit_balance, debit_balance, **kwargs):
         self.id = id 
         self.name = name
         self.credit_balance = credit_balance
-        self.debit_balance = debit_balance # Esto es lo que debe en ESTE gasto
+        self.debit_balance = debit_balance
 
-### Clase de lógica de negocio
 class Model: 
     def __init__(self):
         self.api_url = "http://127.0.0.1:8000"
@@ -66,7 +60,6 @@ class Model:
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al obtener detalles del gasto {gasto_id}: {e}")
             return None
-
 
     def get_amigos(self):
         print("MODELO: Obteniendo amigos desde el servidor...")
@@ -140,8 +133,6 @@ class Model:
                 print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
             return False
 
-    #Métodos añadidos para creación, modificación y eliminación de gastos
-
     def create_gasto(self, datos_gasto: dict) -> bool:
         print(f"MODELO: Creando nuevo gasto con datos: {datos_gasto}")
         try:
@@ -171,41 +162,34 @@ class Model:
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al eliminar el gasto {gasto_id}: {e}")
             return False
-
             
     def create_gasto_with_friends(self, datos_gasto: dict) -> bool:
         friend_ids = datos_gasto.pop('friend_ids', [])
     
-        # 1. Obtenemos los IDs de los gastos actuales
         gastos_previos = self.get_gastos()
         if gastos_previos is None: return False
         ids_previos = {g.id for g in gastos_previos}
 
-        # 2. Creamos el gasto base
         if not self.create_gasto(datos_gasto):
             return False
 
-        # 3. Obtenemos la nueva lista de gastos para encontrar el ID del recién creado
         gastos_nuevos = self.get_gastos()
         if gastos_nuevos is None: return False
         ids_nuevos = {g.id for g in gastos_nuevos}
 
-        # El nuevo ID es el que está en el conjunto nuevo pero no en el viejo
         nuevos_ids_encontrados = ids_nuevos - ids_previos
         if not nuevos_ids_encontrados:
             print("MODELO: No se pudo determinar el ID del nuevo gasto.")
-            return False # Algo fue mal
+            return False
         
         nuevo_gasto_id = nuevos_ids_encontrados.pop()
 
-        # 4. Añadimos los amigos al nuevo gasto
         for friend_id in friend_ids:
             self.add_amigo_a_gasto(nuevo_gasto_id, friend_id)
 
         return True
     
     def add_aporte_a_gasto(self, gasto_id: int, amigo_id: int, amount: float) -> bool:
-        """Envia una petición a la API para registrar un nuevo aporte."""
         print(f"MODELO: Añadiendo aporte de {amount}€ por amigo {amigo_id} al gasto {gasto_id}")
         url = f"{self.api_url}/expenses/{gasto_id}/contributions"
         payload = {"friend_id": amigo_id, "amount": amount}
