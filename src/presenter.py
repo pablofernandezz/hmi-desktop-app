@@ -78,14 +78,32 @@ class Presenter:
 
     def on_save_changes_clicked(self, gasto_original, new_desc, new_amount, amigos_checked_status):
         print(f"PRESENTER: Guardando cambios para el gasto {gasto_original.id}")
+        
         ids_amigos_originales = {amigo.id for amigo in gasto_original.friends}
         ids_amigos_nuevos = {amigo_id for amigo_id, is_checked in amigos_checked_status.items() if is_checked}
         
         ids_anadir = ids_amigos_nuevos - ids_amigos_originales
         ids_quitar = ids_amigos_originales - ids_amigos_nuevos
-
-        for amigo_id in ids_anadir: self.modelo.add_amigo_a_gasto(gasto_original.id, amigo_id)
-        for amigo_id in ids_quitar: self.modelo.remove_amigo_de_gasto(gasto_original.id, amigo_id)
+        
+        # Verificar si estamos intentando quitar algún amigo que tenga crédito > 0
+        amigos_con_credito = []
+        for amigo in gasto_original.friends:
+            if amigo.id in ids_quitar and amigo.credit_balance > 0.01:
+                amigos_con_credito.append(amigo.name)
+        
+        if amigos_con_credito:
+            error_msg = f"No se pueden eliminar los siguientes amigos porque ya han realizado pagos:\n"
+            error_msg += "\n".join([f"- {nombre}" for nombre in amigos_con_credito])
+            
+            # Mostrar diálogo de error
+            self.vista.show_error_dialog(error_msg)
+            return
+        
+        # Si no hay problemas, proceder con los cambios
+        for amigo_id in ids_anadir: 
+            self.modelo.add_amigo_a_gasto(gasto_original.id, amigo_id)
+        for amigo_id in ids_quitar: 
+            self.modelo.remove_amigo_de_gasto(gasto_original.id, amigo_id)
 
         datos_gasto_basico = {"description": new_desc, "amount": new_amount, "date": gasto_original.date}
         self.modelo.update_gasto(gasto_original.id, datos_gasto_basico)

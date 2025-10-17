@@ -312,6 +312,14 @@ class VistaPrincipal(Gtk.ApplicationWindow):
             idx += 1
             current_row = self.lista_gastos.get_row_at_index(idx)
         return None
+    
+    def show_error_dialog(self, message: str):
+        error_dialog = Gtk.MessageDialog(
+            transient_for=self, modal=True, message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK, text=message
+        )
+        error_dialog.connect("response", lambda d, r: d.destroy())
+        error_dialog.present()
 
 
 class GastoRow(Gtk.Box):  
@@ -423,13 +431,29 @@ class GastoRow(Gtk.Box):
 
         amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         amigos_checkboxes = {} 
-        ids_amigos_actuales = {amigo.id for amigo in gasto_editar.friends}
+        
+        # Crear un diccionario de amigos actuales con su crédito
+        amigos_actuales_dict = {}
+        for amigo in gasto_editar.friends:
+            amigos_actuales_dict[amigo.id] = amigo.credit_balance
+        
         for amigo in todos_amigos:
             cb = Gtk.CheckButton(label=amigo.name)
             amigos_checkboxes[amigo.id] = cb
-            if amigo.id in ids_amigos_actuales:
+            
+            # Marcar como activos los amigos que ya están en el gasto
+            if amigo.id in amigos_actuales_dict:
                 cb.set_active(True)
+                
+                # Deshabilitar el checkbox si el amigo tiene crédito > 0
+                # (no se puede eliminar si ya ha pagado algo)
+                if amigos_actuales_dict[amigo.id] > 0.01:
+                    cb.set_sensitive(False)
+                    # Añadir tooltip para explicar por qué está deshabilitado
+                    cb.set_tooltip_text("No se puede eliminar este amigo porque ya ha realizado pagos en este gasto")
+            
             amigos_box.append(cb)
+        
         scrolled_window = Gtk.ScrolledWindow(height_request=150, child=amigos_box)
         edit_grid.attach(Gtk.Label(label="Amigos:"), 0, 2, 1, 1)
         edit_grid.attach(scrolled_window, 1, 2, 1, 1)
