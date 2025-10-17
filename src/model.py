@@ -3,8 +3,7 @@ import requests
 
 ### Modelos de datos
 class Gasto:
-    # CAMBIO AQUÍ: 'friends' es ahora opcional
-    def __init__(self, id, description, amount, date=None, credit_balance=0, num_friends=0, friends=None, **kwargs):
+    def __init__(self, id, description, amount, date=None, credit_balance=0, num_friends=0, friends: list['AmigoEnGasto'] = None, **kwargs):
         self.id = id 
         self.description = description
         self.amount = amount
@@ -25,6 +24,14 @@ class Amigo:
     @property
     def saldo(self):
         return self.credit_balance - self.debit_balance
+
+class AmigoEnGasto: 
+    """Representa a un amigo dentro del contexto de un gasto específico."""
+    def __init__(self, id, name, credit_balance, debit_balance, **kwargs):
+        self.id = id 
+        self.name = name
+        self.credit_balance = credit_balance
+        self.debit_balance = debit_balance # Esto es lo que debe en ESTE gasto
 
 ### Clase de lógica de negocio
 class Model: 
@@ -96,13 +103,13 @@ class Model:
             print(f"MODELO: Error al obtener gastos del amigo {amigo_id}: {e}")
             return []
 
-    def get_amigos_por_gasto(self, gasto_id: int) -> list[Amigo]:
+    def get_amigos_por_gasto(self, gasto_id: int) -> list['AmigoEnGasto']:
         print(f"MODELO: Obteniendo amigos asociados al gasto {gasto_id} desde el servidor...")
         try:
             response = requests.get(f"{self.api_url}/expenses/{gasto_id}/friends")
             response.raise_for_status()
             amigos_json = response.json()
-            return [Amigo(**amigo_data) for amigo_data in amigos_json]
+            return [AmigoEnGasto(**amigo_data) for amigo_data in amigos_json]
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al obtener amigos del gasto {gasto_id}: {e}")
             return []
@@ -209,6 +216,22 @@ class Model:
             return True
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al añadir el aporte: {e}")
+            if e.response is not None:
+                print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
+            return False
+    
+    def make_payment_for_friend(self, gasto_id: int, amigo_id: int, amount: float) -> bool:
+        print(f"MODELO: Amigo {amigo_id} va a pagar {amount}€ para el gasto {gasto_id}")
+        try:
+            response = requests.put(
+                f"{self.api_url}/expenses/{gasto_id}/friends/{amigo_id}",
+                params={"amount": amount}
+            )
+            response.raise_for_status()
+            print("MODELO: Aporte realizado con éxito.")
+            return True
+        except requests.exceptions.RequestException as e:
+            print(f"MODELO: Error al realizar el aporte: {e}")
             if e.response is not None:
                 print(f"MODELO: Respuesta del servidor ({e.response.status_code}): {e.response.text}")
             return False

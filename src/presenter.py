@@ -1,5 +1,7 @@
 # presenter.py
 from datetime import date
+from model import Gasto, Amigo
+from gi.repository import GLib
 
 class Presenter:
     def __init__(self, vista, modelo):
@@ -43,21 +45,25 @@ class Presenter:
         amigo_id = row.amigo_id
         self.on_details_amigo_clicked(amigo_id)
 
-    def on_details_gasto_clicked(self, gasto_id: int, row_widget):
-        print(f"PRESENTER: Usuario quiere ver detalles del gasto {gasto_id}")
-        gasto_con_detalles = self.modelo.get_gasto_details(gasto_id)
-        if gasto_con_detalles:
-            row_widget.show_details_view(gasto_con_detalles)
+    def on_details_amigo_clicked(self, amigo_id: int, row_widget: 'AmigoRow'):
+        print(f"PRESENTER: Usuario quiere ver detalles del amigo {amigo_id}")
+        
+        # Obtenemos los datos del modelo
+        amigo_con_detalles = self.modelo.get_amigo_details(amigo_id)
+        gastos_asociados = self.modelo.get_gastos_por_amigo(amigo_id)
+
+        # Si la obtención de datos fue correcta, se los pasamos a la vista
+        if amigo_con_detalles is not None:
+            row_widget.show_details_view(amigo_con_detalles, gastos_asociados)
         else:
             self.vista.show_connection_error(True)
 
 
-    def on_details_amigo_clicked(self, amigo_id: int, row_widget):
-        print(f"PRESENTER: Usuario quiere ver detalles del amigo {amigo_id}")
-        amigo = self.modelo.get_amigo_details(amigo_id)
-        gastos_asociados = self.modelo.get_gastos_por_amigo(amigo_id)
-        if amigo and gastos_asociados is not None:
-            row_widget.show_details_view(amigo, gastos_asociados)
+    def on_details_gasto_clicked(self, gasto_id: int, row_widget: 'GastoRow'):
+        print(f"PRESENTER: Usuario quiere ver detalles del gasto {gasto_id}")
+        gasto_con_detalles = self.modelo.get_gasto_details(gasto_id)
+        if gasto_con_detalles:
+            row_widget.show_details_view(gasto_con_detalles)
         else:
             self.vista.show_connection_error(True)
 
@@ -156,3 +162,47 @@ class Presenter:
                 self.vista.show_connection_error(True)
         finally:
             self.vista.show_loading(False)
+
+    def on_open_aporte_dialog_clicked(self, gasto: Gasto):
+        print(f"PRESENTER: Abriendo diálogo de aporte para el gasto {gasto.id}")
+        def al_aceptar_aporte(amigo_id, amount):
+            self.on_make_payment_clicked(gasto.id, amigo_id, amount)
+        self.vista.mostrar_dialogo_aporte(gasto.friends, al_aceptar_aporte)
+
+
+    def on_refresh_clicked(self):
+        """Manejador para el botón de Refrescar del menú."""
+        print("PRESENTER: El usuario ha pulsado Refrescar.")
+        self.cargar_datos_principales()
+
+    def on_make_payment_clicked(self, gasto_id: int, amigo_id: int, amount: float):
+        print(f"PRESENTER: Procesando pago de {amount}€ del amigo {amigo_id} para el gasto {gasto_id}")
+        
+        success = self.modelo.make_payment_for_friend(gasto_id, amigo_id, amount)
+        
+        if success:
+            # Lógica para saldar deuda (se mantiene)
+            amigos_en_gasto = self.modelo.get_amigos_por_gasto(gasto_id)
+            amigo_actualizado = next((a for a in amigos_en_gasto if a.id == amigo_id), None)
+            if amigo_actualizado and amigo_actualizado.debit_balance < 0.01:
+                print(f"PRESENTER: El amigo {amigo_id} ha saldado su deuda. Eliminándolo del gasto.")
+                self.modelo.remove_amigo_de_gasto(gasto_id, amigo_id)
+            
+            # --- LÓGICA DE REFRESCO SIMPLIFICADA Y CORRECTA ---
+            # 1. Recargamos todos los datos y redibujamos las listas principales.
+            # Esto crea NUEVAS GastoRow con los datos actualizados.
+            self.cargar_datos_principales()
+
+            # 2. Agendamos una función para que se ejecute justo después del redibujado.
+            def reopen_details_with_fresh_data():
+                # Buscamos la NUEVA fila que corresponde al gasto.
+                row_widget_refrescada = self.vista.get_gasto_row_by_id(gasto_id)
+                if row_widget_refrescada:
+                    print(f"PRESENTER: Forzando reapertura de detalles para el gasto {gasto_id} con datos frescos.")
+                    # Le pedimos a la nueva fila que muestre sus detalles.
+                    # Como es una fila nueva, obtendrá los datos más recientes.
+                    row_widget_refrescada.on_details_clicked(None)
+            
+            GLib.idle_add(reopen_details_with_fresh_data)
+        else:
+            self.vista.show_connection_error(True)
