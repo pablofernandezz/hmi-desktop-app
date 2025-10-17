@@ -136,14 +136,19 @@ class Presenter:
         success = self.modelo.make_payment_for_friend(gasto_id, amigo_id, amount)
         
         if success:
+            # Recargar datos principales
             self.cargar_datos_principales()
 
             def reopen_details_with_fresh_data():
-                row_widget_refrescada = self.vista.get_gasto_row_by_id(gasto_id)
-                if row_widget_refrescada:
-                    print(f"PRESENTER: Forzando reapertura de detalles para el gasto {gasto_id} con datos frescos.")
-                    row_widget_refrescada.on_details_clicked(None)
-            
+                # Obtener los datos más recientes del gasto
+                gasto_actualizado = self.modelo.get_gasto_details(gasto_id)
+                if gasto_actualizado:
+                    row_widget_refrescada = self.vista.get_gasto_row_by_id(gasto_id)
+                    if row_widget_refrescada:
+                        print(f"PRESENTER: Forzando reapertura de detalles para el gasto {gasto_id} con datos frescos.")
+                        # Mostrar la vista de detalles con los datos actualizados
+                        row_widget_refrescada.show_details_view(gasto_actualizado)
+                
             GLib.idle_add(reopen_details_with_fresh_data)
         else:
             self.vista.show_connection_error(True)

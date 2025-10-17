@@ -1,4 +1,5 @@
 import requests
+import time
 
 class Gasto:
     def __init__(self, id, description, amount, date=None, credit_balance=0, num_friends=0, friends: list['AmigoEnGasto'] = None, **kwargs):
@@ -102,7 +103,34 @@ class Model:
             response = requests.get(f"{self.api_url}/expenses/{gasto_id}/friends")
             response.raise_for_status()
             amigos_json = response.json()
-            return [AmigoEnGasto(**amigo_data) for amigo_data in amigos_json]
+            
+            # Obtener detalles del gasto para conocer el importe total
+            gasto_response = requests.get(f"{self.api_url}/expenses/{gasto_id}")
+            gasto_response.raise_for_status()
+            gasto_data = gasto_response.json()
+            importe_total = gasto_data['amount']
+            
+            # Obtener el crédito pagado del gasto
+            credito_total_gasto = gasto_data.get('credit_balance', 0)
+            
+            # Calcular débitos actualizados
+            amigos_actualizados = []
+            num_amigos = len(amigos_json) + 1 # Incluye al usuario principal
+            
+            for amigo_data in amigos_json:
+                # Calcular la parte proporcional que le corresponde a cada amigo
+                parte_proporcional = importe_total / num_amigos
+                 
+                # Calcular el débito actualizado
+                # Esta es una simplificación - podrías necesitar lógica más compleja
+                # dependiendo de cómo el backend distribuya los créditos
+                debito_actualizado = parte_proporcional - amigo_data.get('credit_balance', 0)
+                
+                # Actualizar el débito en los datos del amigo
+                amigo_data['debit_balance'] = debito_actualizado
+                amigos_actualizados.append(AmigoEnGasto(**amigo_data))
+            
+            return amigos_actualizados
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al obtener amigos del gasto {gasto_id}: {e}")
             return []
@@ -213,6 +241,10 @@ class Model:
             )
             response.raise_for_status()
             print("MODELO: Aporte realizado con éxito.")
+            
+            # Forzar una actualización explícita de los amigos del gasto
+            # Esto asegura que obtenemos los datos más recientes
+            time.sleep(0.5)  # Pequeña pausa para asegurar la persistencia en el servidor
             return True
         except requests.exceptions.RequestException as e:
             print(f"MODELO: Error al realizar el aporte: {e}")

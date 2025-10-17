@@ -373,7 +373,7 @@ class GastoRow(Gtk.Box):
         amounts_grid.attach(Gtk.Label(label="<b>Importe Inicial:</b>", use_markup=True, xalign=0), 0, 0, 1, 1)
         amounts_grid.attach(Gtk.Label(label=f"{gasto.amount:.2f}€", xalign=0), 1, 0, 1, 1)
         amounts_grid.attach(Gtk.Label(label="<b>Importe Pagado:</b>", use_markup=True, xalign=0), 0, 1, 1, 1)
-        amounts_grid.attach(Gtk.Label(label=f"<span color='green'>{gasto.credit_balance:.2f}€</span>", use_markup=True, xalign=0), 1, 1, 1, 1) 
+        amounts_grid.attach(Gtk.Label(label=f"<span weight='bold' color='green'>{gasto.credit_balance:.2f}€</span>", use_markup=True, xalign=0), 1, 1, 1, 1) 
         amounts_grid.attach(Gtk.Label(label="<b>Pendiente:</b>", use_markup=True, xalign=0), 0, 2, 1, 1)
         amounts_grid.attach(Gtk.Label(label=f"<span weight='bold' color='red'>{importe_pendiente:.2f}€</span>", use_markup=True, xalign=0), 1, 2, 1, 1)
 
