@@ -71,7 +71,7 @@ Al cierre de la semana 1, el repositorio se encuentra en un estado estable y con
     2.  **`diseño_sw.md`**: Contiene el diseño software basado en MVP con diagramas UML en Mermaid.
     3.  **Código Fuente (`/src`)**: Implementación completa y funcional de la Tarea 1.
 
-*   **Funcionalidad Implementada y Verificada:**
+*   **Resumen de Funcionalidades Implementadas:**
     *   Arquitectura MVP con separación de responsabilidades.
     *   Comunicación con el servidor para todas las operaciones.
     *   CRUD completo para la clase "Gastos".
@@ -79,3 +79,75 @@ Al cierre de la semana 1, el repositorio se encuentra en un estado estable y con
     *   Visualización de detalles de gastos y amigos.
     *   Manejo de errores de conexión con interfaz dedicada.
     *   Interfaz de usuario pulida con logo y elementos de UX mejorados.
+
+
+---
+
+## Registro de tareas llevadas a cabo durante la semana 2
+
+---
+
+#### **Tarea 5: Correcciones de la Tarea 1 (Feedback)**
+
+*   **Descripción de la tarea:** Solucionamos todos los errores de la entrega de la primera tarea. Los cambios principales incluyen:
+    1.  **Refactorización de la UI:** Eliminamos el exceso de diálogos para mostrar detalles y hacer una modificación. En su lugar, implementamos un sistema de `Gtk.Revealer` que permite desplegar la información "in-place" tanto para gastos como para amigos, mejorando la experiencia de usuario.
+    2.  **Mejora del Flujo de Creación de Gastos:** Modificamos el proceso para que el usuario pueda asignar amigos **durante** la creación del gasto. Aunque la API requiere dos pasos, la lógica se encapsuló en una sola función, en la que se crea el gasto y se asignan los amigos que participan en él, todo ello sin que el usuario lo tenga que hacer por separado,esto hace el proceso sencillo e intuitivo.
+    3.  **Revisión Arquitectónica:** Se corrigió el punto de entrada de la aplicación (`main.py`) para seguir el patrón de inyección de dependencias, para hacer que la Vista y el Presentador se creen y conecten en el `main`.
+    4.  **Ajustes de Diseño:** Reubicamos el botón de añadir gasto, se eliminó el logo del cuerpo principal de la aplicación, que movimos al diálogo "Acerca de", y también ocultamos los IDs internos al usuario final.
+*   **Asignación de responsables:** Tarea conjunta del equipo de desarrollo.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** El principal desafío fue refactorizar la Vista para usar `Gtk.Revealer`, que implicó crear clases de fila personalizadas (`GastoRow`, `AmigoRow`) y adaptar toda la lógica del Presentador para interactuar con estas nuevas clases en lugar de con diálogos globales.
+
+---
+
+#### **Tarea 6: Implementación de la Funcionalidad de Aportes**
+
+*   **Descripción de la tarea:** Implementamos desde cero la funcionalidad completa para que un amigo pueda realizar un aporte a un gasto (que faltaba de la primera tarea). Esto incluye:
+    1.  **Interfaz de Aportes:** Creamos de un diálogo (`DialogoAporte`) que permite seleccionar un amigo participante y una cantidad a pagar, con validación para no superar la deuda de ese amigo en ese gasto.
+    2.  **Lógica de Negocio:** Añadimos los métodos necesarios al Modelo para comunicarse con los endpoints de la API correspondientes (`PUT /expenses/{id}/friends/{id}`).
+    3.  **Gestión de Deuda Saldada:** Implementamos la lógica en el Presentador para que, depués de un aporte exitoso, se compruebe si la deuda del amigo ha llegado a cero y, en ese caso, no le deje hacer más aportaciones.
+*   **Asignación de responsables:** Pablo Fernández Martí.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** Tuvimos varios problemas con un bug en el que la vista de detalles no se actualizaba correctamente después de un aporte. Lo solucionamos implementando un patrón de refresco en el Presentador, que recarga los datos y fuerza el redibujado de la vista de detalles con la información actualizada del servidor.
+
+---
+
+#### **Tarea 7: Gestión de la Concurrencia (Tarea 2)**
+
+*   **Descripción de la tarea:** Identificamos todas las operaciones de red como bloqueantes y se refactorizó el **Presentador** para ejecutar todas las llamadas al Modelo en hilos de ejecución secundarios (`threading`). Garantiando que la interfaz gráfica nunca se congele, incluso durante peticiones lentas al servidor y dando feedback al usuario y que sepa así que se está ejecutando algo.
+*   **Asignación de responsables:** Nicolás Domínguez Souto.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** El reto fue asegurarnos de que todas las actualizaciones de la UI se realizaran de forma segura en el hilo principal de GTK. Lo conseguimos con `GLib.idle_add()` para programar las funciones de actualización de la vista después de que el hilo de trabajo completara la operación de red. Se actualizó el `diseño_sw.md` con un diagrama de secuencia que refleja este comportamiento concurrente.
+
+---
+
+#### **Tarea 8: Gestión de Errores de E/S (Tarea 2)**
+
+*   **Descripción de la tarea:** Extendimos el manejo de errores de conexión a **todas** las operaciones que interactúan con el servidor. Ahora, si cualquier petición (añadir, modificar, eliminar, aportar, ver detalles) falla, la aplicación muestra la pantalla de error con la opción de "Reintentar", proporcionando una  mejor experiencia de usuario.
+*   **Asignación de responsables:** Tarea conjunta del equipo de desarrollo.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** No se presentaron conflictos significativos, ya que la base (la pantalla de error y la lógica de detección en el Modelo) la habíamos implementado ya en la Tarea 1. Solo tuvimos que aplicar el  patrón de forma sistemática en todos los métodos del Presentador.
+
+---
+
+## Estado del repositorio en la semana 2
+
+Al cierre de la semana 2, el repositorio ha sido actualizado para cumplir con todos los requisitos de la Tarea 2 y las correcciones de la Tarea 1. La aplicación es ahora concurrente, robusta ante errores de red y ofrece una experiencia de usuario mejorada.
+
+*   **Principales Cambios en el Código:**
+    *   **`view.py`:** Refactorización masiva, ahora usamos `Gtk.HeaderBar`, `Gtk.Revealer` y clases de fila personalizadas (`GastoRow`, `AmigoRow`). Mejoramos el diseño y la usabilidad general.
+    *   **`presenter.py`:** Refactorización completa para implementar la concurrencia en todas las operaciones de red mediante `threading` y `GLib.idle_add`. Mejoramos el manejo de errores y la lógica de refresco de la UI.
+    *   **`model.py`:** Añadimos el método `make_payment_for_friend` creamos la clase `AmigoEnGasto` para manejar los datos de deuda en cada gasto de forma más precisa.
+    *   **`main.py`:** Corregido para seguir un patrón de inyección de dependencias.
+
+*   **Artefactos Actualizados:**
+    *   **`diseño_sw.md`**: Actualizamos los diagramas de secuencia para reflejar el uso de hilos en las operaciones concurrentes.
+
+*   **Resumen de Funcionalidades Implementadas:**
+    *   Todas las operaciones de red se ejecutan en hilos separados, evitando el bloqueo de la UI.
+    *   El spinner de carga se muestra durante todas las operaciones de E/S.
+    *   La gestión de errores de conexión es global para toda la aplicación.
+    *   La UI utiliza `Gtk.Revealer` para una experiencia más fluida y sin diálogos emergentes para detalles/edición.
+    *   La creación de gastos permite asignar amigos en un solo paso para el usuario.
+    *   La funcionalidad de realizar aportes está completamente implementada.
+    *   La arquitectura de la aplicación ha sido corregida y mejorada.
