@@ -1,6 +1,7 @@
 import gi
 gi.require_version("Gtk", "4.0")
-from gi.repository import Gtk, GLib
+gi.require_version("Gio", "2.0")
+from gi.repository import Gtk, GLib, Gio
 from typing import List, Optional, Callable
 
 from model import Gasto, Amigo, AmigoEnGasto
@@ -143,20 +144,23 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
         
-        menu_popover = Gtk.PopoverMenu(has_arrow=False)
-        menu_button.set_popover(menu_popover)
+        menu_model = Gio.Menu()
         
-        menu_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-        menu_popover.set_child(menu_box)
+        menu_section = Gio.Menu()
+        menu_model.append_section(None, menu_section)
         
-        refresh_button = Gtk.Button(label="Refrescar")
-        refresh_button.connect('clicked', lambda w: self.presenter.on_refresh_clicked())
+        menu_section.append("Refrescar", "win.refresh")
+        menu_section.append("Acerca de...", "win.about")
         
-        about_button = Gtk.Button(label="Acerca de...")
-        about_button.connect('clicked', self._on_about_clicked)
+        refresh_action = Gio.SimpleAction.new("refresh", None)
+        refresh_action.connect("activate", lambda action, parameter: self.presenter.on_refresh_clicked())
+        self.add_action(refresh_action)
         
-        menu_box.append(refresh_button)
-        menu_box.append(about_button)
+        about_action = Gio.SimpleAction.new("about", None)
+        about_action.connect("activate", self._on_about_clicked)
+        self.add_action(about_action)
+        
+        menu_button.set_menu_model(menu_model)
 
     def _build_gastos_panel(self):
         gastos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, hexpand=True)
@@ -232,7 +236,7 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         self.stack.add_named(main_box, "main_content")
         self.stack.add_named(error_page, "error_screen")
 
-    def _on_about_clicked(self, widget):
+    def _on_about_clicked(self, action, parameter):        
         about = Gtk.AboutDialog(transient_for=self, modal=True, program_name="SplitWithMe", version="Version 1.0")
         about.set_authors(["Pablo Fernández Martí", "Joel Ramos Carro", "Nicolás Dominguez Souto"])
         about.set_comments("Aplicación de escritorio para la gestión de gastos compartidos con amigos.")
