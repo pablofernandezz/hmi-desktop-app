@@ -23,7 +23,7 @@ class DialogoAporte(Gtk.Dialog):
         grid.attach(self.combo_amigos, 1, 0, 1, 1)
 
         grid.attach(Gtk.Label(label="Cantidad (€):"), 0, 1, 1, 1)
-        self.spin_cantidad = Gtk.SpinButton.new_with_range(0.01, 10000, 0.01)
+        self.spin_cantidad = Gtk.SpinButton.new_with_range(0.01, 10000, 2.50)
         self.spin_cantidad.set_digits(2)
         grid.attach(self.spin_cantidad, 1, 1, 1, 1)
 
@@ -74,7 +74,7 @@ class DialogoGasto(Gtk.Dialog):
         grid.attach(Gtk.Label(label="Descripción:"), 0, 0, 1, 1)
         grid.attach(self.entry_desc, 1, 0, 1, 1)
 
-        self.entry_importe = Gtk.SpinButton.new_with_range(0, 999999, 5.00)
+        self.entry_importe = Gtk.SpinButton.new_with_range(0, 999999, 2.50)
         self.entry_importe.set_digits(2)
         grid.attach(Gtk.Label(label="Importe (€):"), 0, 1, 1, 1)
         grid.attach(self.entry_importe, 1, 1, 1, 1)
@@ -423,7 +423,7 @@ class GastoRow(Gtk.Box):
         edit_grid.attach(Gtk.Label(label="Descripción:"), 0, 0, 1, 1)
         edit_grid.attach(entry_desc, 1, 0, 1, 1)
 
-        spin_importe = Gtk.SpinButton.new_with_range(0, 10000, 0.01)
+        spin_importe = Gtk.SpinButton.new_with_range(0, 10000, 2.50)
         spin_importe.set_digits(2)
         spin_importe.set_value(gasto_editar.amount)
         edit_grid.attach(Gtk.Label(label="Importe (€):"), 0, 1, 1, 1)
