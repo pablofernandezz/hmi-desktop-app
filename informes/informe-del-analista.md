@@ -1,9 +1,5 @@
 # Informe del analista
 
-  > A continuación se ofrece una plantilla para el informe que debe
-  > generar el _analista_ cada semana.
-
-
 ## Evaluación final de la semana 1
 
    - Pablo Fernández Marti
