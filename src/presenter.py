@@ -11,7 +11,6 @@ class Presenter:
         self.vista.connect_signals()
 
     def _execute_in_thread(self, target_func, *args):
-        self.vista.show_loading(True)
         thread = threading.Thread(target=target_func, args=args)
         thread.start()
 
@@ -35,6 +34,7 @@ class Presenter:
             self.vista.show_loading(False)
             print("PRESENTER: Datos iniciales cargados.")
         
+        self.vista.show_loading(True)
         self._execute_in_thread(worker)
 
     def on_retry_clicked(self, widget):
@@ -59,8 +59,9 @@ class Presenter:
                 row_widget.show_details_view(gasto_con_detalles)
             else:
                 self.vista.show_connection_error(True)
-            self.vista.show_loading(False)
+            row_widget.show_row_loading(False)
 
+        row_widget.show_row_loading(True)
         self._execute_in_thread(worker)
 
     def on_add_gasto_clicked(self):
@@ -75,6 +76,7 @@ class Presenter:
             self.vista.show_loading(False)
             self.vista.mostrar_dialogo_gasto(amigos, self._on_accept_new_gasto)
         
+        self.vista.show_loading(True)
         self._execute_in_thread(worker)
 
     def _on_accept_new_gasto(self, datos_gasto):
@@ -87,8 +89,10 @@ class Presenter:
             if success: 
                 self.cargar_datos_principales()
             else: 
-                self.vista.show_connection_error(True); self.vista.show_loading(False)
-
+                self.vista.show_connection_error(True)
+                self.vista.show_loading(False)
+        
+        self.vista.show_loading(True)
         self._execute_in_thread(worker)
     
     def on_modify_gasto_clicked(self, gasto_id: int, row_widget):
@@ -104,11 +108,11 @@ class Presenter:
                 self.vista.show_connection_error(True)
             self.vista.show_loading(False)
 
+        row_widget.show_row_loading(True)
         self._execute_in_thread(worker)
 
-    def on_save_changes_clicked(self, gasto_original, new_desc, new_amount, amigos_checked_status):
+    def on_save_changes_clicked(self, gasto_original, new_desc, new_amount, amigos_checked_status, row_widget):
         def worker():
-            # (La lógica de validación se mantiene igual y se ejecuta aquí)
             ids_amigos_originales = {amigo.id for amigo in gasto_original.friends}
             ids_amigos_nuevos = {amigo_id for amigo_id, is_checked in amigos_checked_status.items() if is_checked}
             ids_anadir = ids_amigos_nuevos - ids_amigos_originales; ids_quitar = ids_amigos_originales - ids_amigos_nuevos
@@ -121,9 +125,13 @@ class Presenter:
             GLib.idle_add(ui_update, success)
         
         def ui_update(success): 
-            if success: self.cargar_datos_principales()
-            else: self.vista.show_connection_error(True); self.vista.show_loading(False)
+            if success: 
+                self.cargar_datos_principales()
+            else: 
+                self.vista.show_connection_error(True)
+                row_widget.show_row_loading(False) 
         
+        row_widget.show_row_loading(True)
         self._execute_in_thread(worker)
 
     def on_delete_gasto_clicked(self, gasto_id: int):
@@ -131,14 +139,21 @@ class Presenter:
         self.vista.show_confirm_delete_dialog(gasto_id)
 
     def on_confirm_delete(self, gasto_id: int):
+        row_widget = self.vista.get_gasto_row_by_id(gasto_id)
+
         def worker():
             success = self.modelo.delete_gasto(gasto_id)
             GLib.idle_add(ui_update, success)
 
         def ui_update(success):
-            if success: self.cargar_datos_principales()
-            else: self.vista.show_connection_error(True); self.vista.show_loading(False)
+            if success: 
+                self.cargar_datos_principales() 
+            else: 
+                self.vista.show_connection_error(True)
+                if row_widget: row_widget.show_row_loading(False) 
         
+        if row_widget:
+            row_widget.show_row_loading(True)
         self._execute_in_thread(worker)
     
     def on_amigo_row_activated(self, listbox, row):
@@ -156,15 +171,16 @@ class Presenter:
                 row_widget.show_details_view(amigo, gastos)
             else:
                 self.vista.show_connection_error(True)
-            self.vista.show_loading(False)
+            row_widget.show_row_loading(False)
         
+        row_widget.show_row_loading(True)
         self._execute_in_thread(worker)
 
-    def on_open_aporte_dialog_clicked(self, gasto: Gasto):
+    def on_open_aporte_dialog_clicked(self, gasto: Gasto, row_widget):
         self.vista.mostrar_dialogo_aporte(gasto.friends, 
-            lambda amigo_id, amount: self.on_make_payment_clicked(gasto.id, amigo_id, amount))
+            lambda amigo_id, amount: self.on_make_payment_clicked(gasto.id, amigo_id, amount, row_widget))
 
-    def on_make_payment_clicked(self, gasto_id: int, amigo_id: int, amount: float):
+    def on_make_payment_clicked(self, gasto_id: int, amigo_id: int, amount: float, row_widget):
         def worker():
             success = self.modelo.make_payment_for_friend(gasto_id, amigo_id, amount)
             if success:
@@ -175,14 +191,18 @@ class Presenter:
             GLib.idle_add(ui_update, success)
 
         def ui_update(success):
-            if success: self.cargar_datos_principales()
-            else: self.vista.show_connection_error(True); self.vista.show_loading(False)
+            if success: 
+                self.cargar_datos_principales()
+            else: 
+                self.vista.show_connection_error(True)
+                row_widget.show_row_loading(False)
         
+        row_widget.show_row_loading(True)
         self._execute_in_thread(worker)
             
     def on_add_aporte_clicked(self, gasto_id: int, row_widget):
         print(f"PRESENTER: Petición para añadir aporte al gasto ID {gasto_id}")
-        self.vista.show_loading(True)
+        row_widget.show_row_loading(True)
         try:
             gasto_completo = self.modelo.get_gasto_details(gasto_id)
 
@@ -198,15 +218,16 @@ class Presenter:
             else:
                 self.vista.show_connection_error(True)
         finally:
-            self.vista.show_loading(False)
+            row_widget.show_row_loading(False)
 
-    def on_save_new_aporte(self, gasto_id: int, amigo_id: int, amount: float):
+    def on_save_new_aporte(self, gasto_id: int, amigo_id: int, amount: float, row_widget):
         print(f"PRESENTER: Guardando nuevo aporte para gasto {gasto_id}")
-        self.vista.show_loading(True)
+        row_widget.show_row_loading(True)
         try:
             if self.modelo.add_aporte_a_gasto(gasto_id, amigo_id, amount):
                 self.cargar_datos_principales()
             else:
                 self.vista.show_connection_error(True)
         finally:
-            self.vista.show_loading(False)
+            if not success:
+                row_widget.show_row_loading(False) 

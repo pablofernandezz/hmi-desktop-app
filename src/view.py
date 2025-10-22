@@ -141,6 +141,10 @@ class VistaPrincipal(Gtk.ApplicationWindow):
     def _build_header(self):
         header = Gtk.HeaderBar()
         self.set_titlebar(header)
+
+        self.header_spinner = Gtk.Spinner(spinning=False, visible=False)
+        header.pack_start(self.header_spinner) 
+
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
         
@@ -218,14 +222,8 @@ class VistaPrincipal(Gtk.ApplicationWindow):
     def _build_ui(self):
         self._build_header()
         
-        overlay = Gtk.Overlay()
-        self.set_child(overlay)
-        
-        self.spinner = Gtk.Spinner(spinning=False, visible=False, halign=Gtk.Align.CENTER, valign=Gtk.Align.CENTER, width_request=50, height_request=50)
-        overlay.add_overlay(self.spinner)
-
         self.stack = Gtk.Stack(transition_type=Gtk.StackTransitionType.CROSSFADE)
-        overlay.set_child(self.stack)
+        self.set_child(self.stack)
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20, margin_top=20, margin_bottom=20, margin_start=20, margin_end=20)
         main_box.append(self._build_gastos_panel())
@@ -254,14 +252,11 @@ class VistaPrincipal(Gtk.ApplicationWindow):
 
     def show_connection_error(self, visible: bool):
         child_name = "error_screen" if visible else "main_content"
-        self.stack.set_visible_child_name(child_name)
+        self.stack.set_visible_child_name(child_name)	
 
     def show_loading(self, is_loading: bool):
-        self.spinner.set_visible(is_loading)
-        self.spinner.set_spinning(is_loading)
-        main_widget = self.get_child()
-        if main_widget and main_widget.get_child():
-             main_widget.get_child().set_sensitive(not is_loading)
+        self.header_spinner.set_visible(is_loading)
+        self.header_spinner.set_spinning(is_loading)
 
     def _clear_list_box(self, list_box: Gtk.ListBox):
         while (child := list_box.get_row_at_index(0)):
@@ -309,10 +304,9 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         current_row = self.lista_gastos.get_row_at_index(0)
         idx = 0
         while current_row:
-            if isinstance(current_row, Gtk.ListBoxRow):
-                gasto_row_widget = current_row.get_child()
-                if isinstance(gasto_row_widget, GastoRow) and gasto_row_widget.gasto_id == gasto_id:
-                    return gasto_row_widget
+            gasto_row_widget = current_row.get_child()
+            if isinstance(gasto_row_widget, GastoRow) and gasto_row_widget.gasto_id == gasto_id:
+                return gasto_row_widget
             idx += 1
             current_row = self.lista_gastos.get_row_at_index(idx)
         return None
@@ -350,6 +344,9 @@ class GastoRow(Gtk.Box):
         self.delete_button = Gtk.Button.new_from_icon_name("user-trash-symbolic")
         self.delete_button.get_style_context().add_class("destructive-action")
         
+        self.row_spinner = Gtk.Spinner(spinning=False, visible=False)
+        buttons_box.append(self.row_spinner)
+
         buttons_box.append(self.details_button)
         buttons_box.append(self.modify_button)
         buttons_box.append(self.delete_button)
@@ -357,6 +354,14 @@ class GastoRow(Gtk.Box):
         main_row_box.append(info_label)
         main_row_box.append(buttons_box)
         self.append(main_row_box)
+
+    def show_row_loading(self, is_loading: bool):
+        self.row_spinner.set_visible(is_loading)
+        self.row_spinner.set_spinning(is_loading)
+        
+        self.details_button.set_sensitive(not is_loading)
+        self.modify_button.set_sensitive(not is_loading)
+        self.delete_button.set_sensitive(not is_loading)
 
     def _connect_signals(self):
         self.details_button.connect('clicked', self.on_details_clicked)
@@ -400,7 +405,7 @@ class GastoRow(Gtk.Box):
 
         aporte_button = Gtk.Button(label="Aportar Dinero")
         aporte_button.set_sensitive(importe_pendiente >= 0.01)
-        aporte_button.connect('clicked', lambda w: self.presenter.on_open_aporte_dialog_clicked(gasto))
+        aporte_button.connect('clicked', lambda w: self.presenter.on_open_aporte_dialog_clicked(gasto, self))
         
         details_box.append(info_grid)
         details_box.append(Gtk.Separator())
@@ -472,7 +477,8 @@ class GastoRow(Gtk.Box):
         cancel_button.connect('clicked', lambda w: self.revealer.set_reveal_child(False))
         save_button.connect('clicked', lambda w: self.presenter.on_save_changes_clicked(
             gasto_editar, entry_desc.get_text(), spin_importe.get_value(),
-            {amigo_id: cb.get_active() for amigo_id, cb in amigos_checkboxes.items()}
+            {amigo_id: cb.get_active() for amigo_id, cb in amigos_checkboxes.items()}, 
+            self
         ))
         return edit_grid
 
@@ -503,11 +509,19 @@ class AmigoRow(Gtk.Box):
         label.set_markup(f"<b>{amigo.name}</b>\nSaldo: {amigo.saldo:.2f}€")
         
         self.details_button = Gtk.Button.new_from_icon_name("go-down-symbolic")
-        
+         
+        self.row_spinner = Gtk.Spinner(spinning=False, visible=False)
+
         main_row_box.append(label)
+        main_row_box.append(self.row_spinner)
         main_row_box.append(self.details_button)
         self.append(main_row_box)
         
+    def show_row_loading(self, is_loading: bool):
+        self.row_spinner.set_visible(is_loading)
+        self.row_spinner.set_spinning(is_loading)
+        self.details_button.set_sensitive(not is_loading)
+    
     def on_details_clicked(self, widget):
         if not self.revealer.get_child_revealed():
             self.presenter.on_details_amigo_clicked(self.amigo.id, self)
