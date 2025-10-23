@@ -135,29 +135,91 @@ class VistaPrincipal(Gtk.ApplicationWindow):
         self.set_default_size(800, 600)
         self._build_ui()
 
+    def run_on_ui_thread(self, func, *args):
+        GLib.idle_add(func, *args)
+
+    def show_row_loading(self, gasto_id: int, is_loading: bool):
+        row = self.get_gasto_row_by_id(gasto_id)
+        if row:
+            row.show_row_loading(is_loading)
+
+    def show_amigo_row_loading(self, amigo_id: int, is_loading: bool):
+        row = self.get_amigo_row_by_id(amigo_id)
+        if row:
+            row.show_row_loading(is_loading)
+
+    def update_initial_data(self, gastos, amigos):
+        if gastos is None or amigos is None:
+            self.show_connection_error(True)
+        else:
+            self.show_connection_error(False)
+            self.mostrar_gastos(gastos)
+            self.mostrar_amigos(amigos)
+        
+        self.show_loading(False)
+
+    def show_gasto_details_or_error(self, gasto_id: int, gasto_con_detalles: Gasto):
+        row = self.get_gasto_row_by_id(gasto_id)
+        if gasto_con_detalles and row:
+            row.show_details_view(gasto_con_detalles)
+        elif not gasto_con_detalles:
+            self.show_connection_error(True)
+        
+        if row:
+            row.show_row_loading(False)
+
+    def show_gasto_edit_or_error(self, gasto_id: int, gasto: Gasto, amigos: List[Amigo]):
+        row = self.get_gasto_row_by_id(gasto_id)
+        if gasto and amigos and row:
+            row.update_edit_view(gasto, amigos)
+        elif not (gasto and amigos):
+            self.show_connection_error(True)
+
+        if row:
+            row.show_row_loading(False)
+    
+    def show_amigo_details_or_error(self, amigo_id: int, amigo: Amigo, gastos: List[Gasto]):
+        row = self.get_amigo_row_by_id(amigo_id)
+        if amigo and gastos is not None and row:
+            row.show_details_view(amigo, gastos)
+        elif not (amigo and gastos is not None):
+            self.show_connection_error(True)
+        
+        if row:
+            row.show_row_loading(False)
+
+    def reload_data_or_error(self, success: bool, gasto_id: int = None, amigo_id: int = None):
+        if success:
+            self.presenter.cargar_datos_principales()
+        else:
+            self.show_connection_error(True)
+            if gasto_id:
+                self.show_row_loading(gasto_id, False)
+            if amigo_id:
+                self.show_amigo_row_loading(amigo_id, False)
+            self.show_loading(False)
+
     def set_presenter(self, p):
         self.presenter = p
 
     def _build_header(self):
         header = Gtk.HeaderBar()
         self.set_titlebar(header)
-
+        
         self.header_spinner = Gtk.Spinner(spinning=False, visible=False)
-        header.pack_start(self.header_spinner) 
-
+        header.pack_start(self.header_spinner)
+        
         menu_button = Gtk.MenuButton(icon_name="open-menu-symbolic")
         header.pack_end(menu_button)
         
         menu_model = Gio.Menu()
-        
         menu_section = Gio.Menu()
         menu_model.append_section(None, menu_section)
-        
         menu_section.append("Refrescar", "win.refresh")
         menu_section.append("Acerca de...", "win.about")
         
         refresh_action = Gio.SimpleAction.new("refresh", None)
-        refresh_action.connect("activate", lambda action, parameter: self.presenter.on_refresh_clicked())
+        refresh_action.connect("activate", lambda a, p: self.presenter.on_refresh_clicked())
         self.add_action(refresh_action)
         
         about_action = Gio.SimpleAction.new("about", None)
@@ -252,7 +314,7 @@ class VistaPrincipal(Gtk.ApplicationWindow):
 
     def show_connection_error(self, visible: bool):
         child_name = "error_screen" if visible else "main_content"
-        self.stack.set_visible_child_name(child_name)	
+        self.stack.set_visible_child_name(child_name)
 
     def show_loading(self, is_loading: bool):
         self.header_spinner.set_visible(is_loading)
@@ -311,6 +373,17 @@ class VistaPrincipal(Gtk.ApplicationWindow):
             current_row = self.lista_gastos.get_row_at_index(idx)
         return None
     
+    def get_amigo_row_by_id(self, amigo_id: int) -> Optional['AmigoRow']:
+        current_row = self.lista_amigos.get_row_at_index(0)
+        idx = 0
+        while current_row:
+            amigo_row_widget = current_row.get_child()
+            if isinstance(amigo_row_widget, AmigoRow) and amigo_row_widget.amigo.id == amigo_id:
+                return amigo_row_widget
+            idx += 1
+            current_row = self.lista_amigos.get_row_at_index(idx)
+        return None
+    
     def show_error_dialog(self, message: str):
         error_dialog = Gtk.MessageDialog(
             transient_for=self, modal=True, message_type=Gtk.MessageType.ERROR,
@@ -346,7 +419,7 @@ class GastoRow(Gtk.Box):
         
         self.row_spinner = Gtk.Spinner(spinning=False, visible=False)
         buttons_box.append(self.row_spinner)
-
+        
         buttons_box.append(self.details_button)
         buttons_box.append(self.modify_button)
         buttons_box.append(self.delete_button)
@@ -358,19 +431,18 @@ class GastoRow(Gtk.Box):
     def show_row_loading(self, is_loading: bool):
         self.row_spinner.set_visible(is_loading)
         self.row_spinner.set_spinning(is_loading)
-        
         self.details_button.set_sensitive(not is_loading)
         self.modify_button.set_sensitive(not is_loading)
         self.delete_button.set_sensitive(not is_loading)
 
     def _connect_signals(self):
         self.details_button.connect('clicked', self.on_details_clicked)
-        self.modify_button.connect('clicked', lambda w: self.presenter.on_modify_gasto_clicked(self.gasto_id, self))
+        self.modify_button.connect('clicked', lambda w: self.presenter.on_modify_gasto_clicked(self.gasto_id))
         self.delete_button.connect('clicked', lambda w: self.presenter.on_delete_gasto_clicked(self.gasto_id))
 
     def on_details_clicked(self, widget):
         if not self.revealer.get_child_revealed():
-            self.presenter.on_details_gasto_clicked(self.gasto_id, self)
+            self.presenter.on_details_gasto_clicked(self.gasto_id)
         else:
             self.revealer.set_reveal_child(False)
 
@@ -405,7 +477,7 @@ class GastoRow(Gtk.Box):
 
         aporte_button = Gtk.Button(label="Aportar Dinero")
         aporte_button.set_sensitive(importe_pendiente >= 0.01)
-        aporte_button.connect('clicked', lambda w: self.presenter.on_open_aporte_dialog_clicked(gasto, self))
+        aporte_button.connect('clicked', lambda w: self.presenter.on_open_aporte_dialog_clicked(gasto))
         
         details_box.append(info_grid)
         details_box.append(Gtk.Separator())
@@ -441,30 +513,23 @@ class GastoRow(Gtk.Box):
         amigos_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
         amigos_checkboxes = {} 
         
-        # Crear un diccionario de amigos actuales con su crédito
-        amigos_actuales_dict = {}
-        for amigo in gasto_editar.friends:
-            amigos_actuales_dict[amigo.id] = amigo.credit_balance
+        amigos_actuales_dict = {amigo.id: amigo.credit_balance for amigo in gasto_editar.friends}
         
         for amigo in todos_amigos:
             cb = Gtk.CheckButton(label=amigo.name)
             amigos_checkboxes[amigo.id] = cb
             
-            # Marcar como activos los amigos que ya están en el gasto
             if amigo.id in amigos_actuales_dict:
                 cb.set_active(True)
                 
-                # Deshabilitar el checkbox si el amigo tiene crédito > 0
-                # (no se puede eliminar si ya ha pagado algo)
                 if amigos_actuales_dict[amigo.id] > 0.01:
                     cb.set_sensitive(False)
-                    # Añadir tooltip para explicar por qué está deshabilitado
                     cb.set_tooltip_text("No se puede eliminar este amigo porque ya ha realizado pagos en este gasto")
             
             amigos_box.append(cb)
         
         scrolled_window = Gtk.ScrolledWindow(height_request=150, child=amigos_box)
-        edit_grid.attach(Gtk.Label(label="Amigos:"), 0, 2, 1, 1)
+        edit_grid.attach(Gtk.Label(label="Amigos:", valign=Gtk.Align.START), 0, 2, 1, 1)
         edit_grid.attach(scrolled_window, 1, 2, 1, 1)
 
         buttons_box = Gtk.Box(spacing=10, halign=Gtk.Align.END)
@@ -477,8 +542,7 @@ class GastoRow(Gtk.Box):
         cancel_button.connect('clicked', lambda w: self.revealer.set_reveal_child(False))
         save_button.connect('clicked', lambda w: self.presenter.on_save_changes_clicked(
             gasto_editar, entry_desc.get_text(), spin_importe.get_value(),
-            {amigo_id: cb.get_active() for amigo_id, cb in amigos_checkboxes.items()}, 
-            self
+            {amigo_id: cb.get_active() for amigo_id, cb in amigos_checkboxes.items()}
         ))
         return edit_grid
 
@@ -509,14 +573,13 @@ class AmigoRow(Gtk.Box):
         label.set_markup(f"<b>{amigo.name}</b>\nSaldo: {amigo.saldo:.2f}€")
         
         self.details_button = Gtk.Button.new_from_icon_name("go-down-symbolic")
-         
         self.row_spinner = Gtk.Spinner(spinning=False, visible=False)
 
         main_row_box.append(label)
         main_row_box.append(self.row_spinner)
         main_row_box.append(self.details_button)
         self.append(main_row_box)
-        
+    
     def show_row_loading(self, is_loading: bool):
         self.row_spinner.set_visible(is_loading)
         self.row_spinner.set_spinning(is_loading)
@@ -524,7 +587,7 @@ class AmigoRow(Gtk.Box):
     
     def on_details_clicked(self, widget):
         if not self.revealer.get_child_revealed():
-            self.presenter.on_details_amigo_clicked(self.amigo.id, self)
+            self.presenter.on_details_amigo_clicked(self.amigo.id)
         else:
             self.revealer.set_reveal_child(False)
 
