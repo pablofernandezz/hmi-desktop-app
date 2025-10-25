@@ -1,0 +1,129 @@
+# Galician translations for P package.
+# Copyright (C) 2025 THE P'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the P package.
+# Automatically generated, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: P 1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-10-25 18:09+0200\n"
+"PO-Revision-Date: 2025-10-25 18:09+0200\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: gl_ES\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: src/view.py:24
+msgid "N/A"
+msgstr ""
+
+#: src/view.py:34 src/view.py:616
+msgid "Realizar Aporte"
+msgstr ""
+
+#: src/view.py:35 src/view.py:86
+msgid "_Cancelar"
+msgstr ""
+
+#: src/view.py:35 src/view.py:86
+msgid "_Aceptar"
+msgstr ""
+
+#: src/view.py:42
+msgid "Amigo:"
+msgstr ""
+
+#: src/view.py:47
+#, python-brace-format
+msgid "{name} (debe {deuda})"
+msgstr ""
+
+#: src/view.py:51
+msgid "Cantidad:"
+msgstr ""
+
+#: src/view.py:100 src/view.py:502
+msgid "Descripción:"
+msgstr ""
+
+#: src/view.py:105
+msgid "Importe:"
+msgstr ""
+
+#: src/view.py:108
+msgid "Amigos:"
+msgstr ""
+
+#: src/view.py:135
+msgid "El campo 'Descripción' no puede estar vacío."
+msgstr ""
+
+#: src/view.py:138
+msgid "El importe debe ser mayor que cero."
+msgstr ""
+
+#: src/view.py:243
+msgid "Refrescar"
+msgstr ""
+
+#: src/view.py:244
+msgid "Acerca de..."
+msgstr ""
+
+#: src/view.py:302
+msgid "No es posible conectarse con el servidor"
+msgstr ""
+
+#: src/view.py:303
+msgid "Reintentar"
+msgstr ""
+
+#: src/view.py:325
+msgid "Versión 1.0"
+msgstr ""
+
+#: src/view.py:327
+msgid ""
+"Aplicación de escritorio para la gestión de gastos compartidos con amigos."
+msgstr ""
+
+#: src/view.py:371
+msgid "¿Estás seguro de que quieres eliminar este gasto?"
+msgstr ""
+
+#: src/view.py:507
+msgid "Fecha:"
+msgstr ""
+
+#: src/view.py:508
+msgid "Seleccionar fecha"
+msgstr ""
+
+#: src/view.py:540
+msgid "Importe Total (€):"
+msgstr ""
+
+#: src/view.py:558
+msgid ""
+"No se puede eliminar este amigo porque ya ha realizado pagos en este gasto"
+msgstr ""
+
+#: src/view.py:565
+msgid "Cancelar"
+msgstr ""
+
+#: src/view.py:566
+msgid "Guardar cambios"
+msgstr ""
+
+#: src/view.py:606
+msgid "Ningún amigo participa en este gasto."
+msgstr ""
+
+#: src/view.py:610
+#, python-brace-format
+msgid "{name} (Debe: <span weight='bold' color='red'>{deuda}</span>)"
+msgstr ""
