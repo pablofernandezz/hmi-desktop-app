@@ -1,11 +1,17 @@
 #main.py
 import sys
+import signal
 from view import App, VistaPrincipal
 from model import Model
 from presenter import Presenter
 
 def main():
-    # App ya no necesita el modelo
+    def signal_handler(sig, frame):
+        print("\nCerrando aplicación...")
+        sys.exit(0)
+    
+    signal.signal(signal.SIGINT, signal_handler)
+
     app = App()
 
     def on_activate(application):

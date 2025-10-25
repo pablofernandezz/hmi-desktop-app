@@ -118,12 +118,10 @@ class Model:
             num_amigos = len(amigos_json) + 1 # Incluye al usuario principal
             
             for amigo_data in amigos_json:
-                # Calcular la parte proporcional que le corresponde a cada amigo
+                # Calcular la parte que le corresponde a cada amigo
                 parte_proporcional = importe_total / num_amigos
                  
                 # Calcular el débito actualizado
-                # Esta es una simplificación - podrías necesitar lógica más compleja
-                # dependiendo de cómo el backend distribuya los créditos
                 debito_actualizado = parte_proporcional - amigo_data.get('credit_balance', 0)
                 
                 # Actualizar el débito en los datos del amigo
@@ -242,8 +240,6 @@ class Model:
             response.raise_for_status()
             print("MODELO: Aporte realizado con éxito.")
             
-            # Forzar una actualización explícita de los amigos del gasto
-            # Esto asegura que obtenemos los datos más recientes
             time.sleep(0.5)  # Pequeña pausa para asegurar la persistencia en el servidor
             return True
         except requests.exceptions.RequestException as e:

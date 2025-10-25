@@ -38,7 +38,8 @@ class Presenter:
     def on_details_gasto_clicked(self, gasto_id: int):
         def worker():
             gasto_con_detalles = self.modelo.get_gasto_details(gasto_id)
-            self.vista.run_on_ui_thread(self.vista.show_gasto_details_or_error, gasto_id, gasto_con_detalles)
+            amigos = self.modelo.get_amigos()
+            self.vista.run_on_ui_thread(self.vista.show_gasto_details_or_error, gasto_id, gasto_con_detalles, amigos)
 
         self.vista.show_row_loading(gasto_id, True)
         thread = threading.Thread(target=worker)
@@ -82,7 +83,7 @@ class Presenter:
         thread = threading.Thread(target=worker)
         thread.start()
 
-    def on_save_changes_clicked(self, gasto_original, new_desc, new_amount, amigos_checked_status):
+    def on_save_changes_clicked(self, gasto_original, new_desc, new_amount, new_date, amigos_checked_status):
         gasto_id = gasto_original.id
         def worker():
             ids_amigos_originales = {amigo.id for amigo in gasto_original.friends}
@@ -93,11 +94,16 @@ class Presenter:
                 self.modelo.add_amigo_a_gasto(gasto_id, amigo_id)
             for amigo_id in ids_quitar: 
                 self.modelo.remove_amigo_de_gasto(gasto_id, amigo_id) 
-            datos_basicos = {"description": new_desc, "amount": new_amount, "date": gasto_original.date}
+            
+            datos_basicos = {
+                "description": new_desc, 
+                "amount": new_amount, 
+                "date": new_date # Usamos la fecha que viene de la vista
+            }
             success = self.modelo.update_gasto(gasto_id, datos_basicos)
             
             self.vista.run_on_ui_thread(self.vista.reload_data_or_error, success, gasto_id=gasto_id)
-    
+
         self.vista.show_row_loading(gasto_id, True)
         thread = threading.Thread(target=worker)
         thread.start()
@@ -109,7 +115,7 @@ class Presenter:
     def on_confirm_delete(self, gasto_id: int):
         def worker():
             success = self.modelo.delete_gasto(gasto_id)
-            self.vista.run_on_ui_thread(self.vista.reload_data_or_error, success, gasto_id=gasto_id)
+            self.vista.run_on_ui_thread(self.vista.reload_data_or_error, success, gasto_id)
 
         self.vista.show_row_loading(gasto_id, True)
         thread = threading.Thread(target=worker)
