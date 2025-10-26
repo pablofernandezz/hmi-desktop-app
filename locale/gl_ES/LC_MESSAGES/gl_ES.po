@@ -40,7 +40,7 @@ msgstr "Amigo:"
 #: src/view.py:47
 #, python-brace-format
 msgid "{name} (debe {deuda})"
-msgstr "{name} (debe {debeda})"
+msgstr "{name} (debe {deuda})"
 
 #: src/view.py:51
 msgid "Cantidad:"
@@ -129,7 +129,7 @@ msgstr "Nengun amigo participa neste gasto."
 #: src/view.py:610
 #, python-brace-format
 msgid "{name} (Debe: <span weight='bold' color='red'>{deuda}</span>)"
-msgstr "{name} (Debe: <span weight='bold' color='red'>{débeda}</span>)"
+msgstr "{name} (Debe: <span weight='bold' color='red'>{deuda}</span>)"
 
 #: src/view.py:243
 msgid "GASTOS"
