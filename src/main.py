@@ -1,32 +1,30 @@
 #main.py
 import sys
 import signal
-import gettext
-import locale
-from pathlib import Path
-
 from view import App, VistaPrincipal
 from model import Model
 from presenter import Presenter
 
+#inicializacion sistema internacionalizacion
+import locale
+import gettext 
+import os 
+
+try:
+    locale.setlocale(locale.LC_ALL, '')
+except locale.Error:
+    print("Locale no soportado por el sistema, usando 'en_US.UTF-8'")
+    locale.setlocale(locale.LC_ALL, 'en_US.UTF-8')
+
+APP_NAME = "splitwithme"
+LOCALE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'po')
+
+gettext.bindtextdomain(APP_NAME, LOCALE_DIR)   
+gettext.textdomain(APP_NAME) 
+_ = gettext.gettext
+
 def main():
-
-    try:
-        locale.setlocale(locale.LC_ALL, '')
-    except locale.Error as e:
-        print(f"Advertencia: No se pudo establecer el locale del sistema. Se usará el por defecto. Error: {e}")
-
-    APP_NAME= "splitwithme"
-    LOCALE_DIR = Path(__file__).parent.parent / "locale"
-    gettext.bindtextdomain(APP_NAME, LOCALE_DIR)
-    gettext.textdomain(APP_NAME)
-
-    def signal_handler(sig, frame):
-        print("\nCerrando aplicación...")
-        sys.exit(0)
-    
-    signal.signal(signal.SIGINT, signal_handler)
-
+    # App ya no necesita el modelo
     app = App()
 
     def on_activate(application):
