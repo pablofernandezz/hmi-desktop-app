@@ -23,110 +23,162 @@ msgstr "N/A"
 
 #: src/view.py:34 src/view.py:616
 msgid "Realizar Aporte"
-msgstr "Realizar Aporte"
+msgstr "Make Contribution"
 
 #: src/view.py:35 src/view.py:86
 msgid "_Cancelar"
-msgstr "_Cancelar"
+msgstr "_Cancel"
 
 #: src/view.py:35 src/view.py:86
 msgid "_Aceptar"
-msgstr "_Aceptar"
+msgstr "_Accept"
 
 #: src/view.py:42
 msgid "Amigo:"
-msgstr "Amigo:"
+msgstr "Friend:"
 
 #: src/view.py:47
 #, python-brace-format
 msgid "{name} (debe {deuda})"
-msgstr "{name} (debe {deuda})"
+msgstr "{name} (owes {deuda})"
 
 #: src/view.py:51
 msgid "Cantidad:"
-msgstr "Cantidad:"
+msgstr "Amount:"
 
 #: src/view.py:100 src/view.py:502
 msgid "Descripción:"
-msgstr "Descripción:"
+msgstr "Description:"
 
 #: src/view.py:105
 msgid "Importe:"
-msgstr "Importe:"
+msgstr "Amount:"
 
 #: src/view.py:108
 msgid "Amigos:"
-msgstr "Amigos:"
+msgstr "Friends:"
 
 #: src/view.py:135
 msgid "El campo 'Descripción' no puede estar vacío."
-msgstr "El campo 'Descripción' no puede estar vacío."
+msgstr "The 'Description' field cannot be empty."
 
 #: src/view.py:138
 msgid "El importe debe ser mayor que cero."
-msgstr "El importe debe ser mayor que cero."
+msgstr "The amount must be greater than zero."
 
 #: src/view.py:243
 msgid "Refrescar"
-msgstr "Refrescar"
+msgstr "Refresh"
 
 #: src/view.py:244
 msgid "Acerca de..."
-msgstr "Acerca de..."
+msgstr "About..."
 
 #: src/view.py:302
 msgid "No es posible conectarse con el servidor"
-msgstr "No es posible conectarse con el servidor"
+msgstr "Unable to connect to the server"
 
 #: src/view.py:303
 msgid "Reintentar"
-msgstr "Reintentar"
+msgstr "Retry"
 
 #: src/view.py:325
 msgid "Versión 1.0"
-msgstr "Versión 1.0"
+msgstr "Version 1.0"
 
 #: src/view.py:327
 msgid ""
 "Aplicación de escritorio para la gestión de gastos compartidos con amigos."
 msgstr ""
-"Aplicación de escritorio para la gestión de gastos compartidos con amigos."
+"Desktop application for managing shared expenses with friends."
 
 #: src/view.py:371
 msgid "¿Estás seguro de que quieres eliminar este gasto?"
-msgstr "¿Estás seguro de que quieres eliminar este gasto?"
+msgstr "Are you sure you want to delete this expense?"
 
 #: src/view.py:507
 msgid "Fecha:"
-msgstr "Fecha:"
+msgstr "Date:"
 
 #: src/view.py:508
 msgid "Seleccionar fecha"
-msgstr "Seleccionar fecha"
+msgstr "Select date"
 
 #: src/view.py:540
 msgid "Importe Total (€):"
-msgstr "Importe Total (€):"
+msgstr "Total Amount (€):"
 
 #: src/view.py:558
 msgid ""
 "No se puede eliminar este amigo porque ya ha realizado pagos en este gasto"
 msgstr ""
-"No se puede eliminar este amigo porque ya ha realizado pagos en este gasto"
+"This friend cannot be removed because they have already made payments on this expense"
 
 #: src/view.py:565
 msgid "Cancelar"
-msgstr "Cancelar"
+msgstr "Cancel"
 
 #: src/view.py:566
 msgid "Guardar cambios"
-msgstr "Guardar cambios"
+msgstr "Save changes"
 
 #: src/view.py:606
 msgid "Ningún amigo participa en este gasto."
-msgstr "Ningún amigo participa en este gasto."
+msgstr "No friends are participating in this expense."
 
 #: src/view.py:610
 #, python-brace-format
 msgid "{name} (Debe: <span weight='bold' color='red'>{deuda}</span>)"
-msgstr "{name} (Debe: <span weight='bold' color='red'>{deuda}</span>)"
+msgstr "{name} (Owes: <span weight='bold' color='red'>{deuda}</span>)"
+
+#: src/view.py:243
+msgid "GASTOS"
+msgstr "EXPENSES"
+
+#: src/view.py:244
+msgid "AMIGOS"
+msgstr "FRIENDS"
+
+#: src/view.py:371
+msgid "Saldo"
+msgstr "Balance"
+
+#: src/view.py:502
+msgid "Amigos participantes"
+msgstr "Participating Friends"
+
+#: src/view.py:540
+msgid "Importe Total"
+msgstr "Total Amount"
+
+#: src/view.py:540
+msgid "Importe Pagado"
+msgstr "Paid Amount"
+
+#: src/view.py:540
+msgid "Pendiente"
+msgstr "Pending"
+
+#: src/view.py:606
+msgid "Participantes y Deudas"
+msgstr "Participants and Debts"
+
+#: src/view.py:610
+msgid "Crédito"
+msgstr "Credit"
+
+#: src/view.py:610
+msgid "Débito"
+msgstr "Debit"
+
+#: src/view.py:610
+msgid "Gastos"
+msgstr "Expenses"
+
+#: src/view.py:616
+msgid "Información"
+msgstr "Information"
+
+#: src/view.py:616
+msgid "Aportes"
+msgstr "Contributions"
