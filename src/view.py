@@ -516,17 +516,20 @@ class GastoRow(Gtk.Box):
         # estado inicial del calendario
         if gasto.date:
             try:
-                year, month, day = map(int, gasto.date.split('-'))
-                # GLib.Date usa mes base 1, así que no hay que restar
-                calendar.select_day(GLib.Date.new_dmy(day, month, year))
-            except (ValueError, TypeError):
-                print("Error al parsear la fecha inicial del gasto.")
+                fecha_dt = datetime.strptime(gasto.date, "%Y-%m-%d")
+                year = fecha_dt.year
+                month = fecha_dt.month
+                day = fecha_dt.day
+                datetime_obj = GLib.DateTime.new_local(year, month, day, 0, 0, 0)
+                calendar.select_day(datetime_obj)
+            except (ValueError, TypeError) as e:
+                print(f"Error al parsear la fecha inicial del gasto: {e}")
 
         # conectar la señal para cuando el usuario selecciona un día
         def on_day_selected(cal):
-            date = cal.get_date()
+            date = cal.get_date()  
             new_date_str = f"{date.get_year()}-{date.get_month():02d}-{date.get_day_of_month():02d}"
-            date_button.set_label(format_date(new_date_str)) # Mostramos en formato local
+            date_button.set_label(format_date(new_date_str))
             popover.popdown()
             
         calendar.connect("day-selected", on_day_selected)
