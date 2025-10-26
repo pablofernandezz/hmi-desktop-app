@@ -79,3 +79,43 @@
 
   h) ¿Cómo se relaciona ESTE contenido con otros del curso y con tu
      titulación? En esta semana, la aplicación práctica de la concurrencia es algo que valoramos mucho que se lleve a cabo de esta manera, teniendo ya unos conocimientos previos sobre ella gracias a asignaturas ya cursadas como Concurrencia e Paralelismo del segundo grado de la titulación.
+
+## Evaluación final de la semana 3
+
+   - Pablo Fernández Marti
+   
+     - 4
+
+	 - Ha solucionado correctamente varios problemas que se han ido dando a lo largo de esta semana debido a confusiones y malentendidos con el resto de compañeros. A pesar de ello, los ha resuelto y ha reorganizado el flujo de trabajo para que no afectase a la entrega.
+
+   - Nicolás Domínguez Souto
+    
+     - 3
+
+     - Junto con el resto de compañeros, esta semana ha tenido varios malentendidos que han derivado en correcciones erróneas e implementaciones no deseadas. Aún así ha realizado su trabajo correctamente igual que las semanas anteriores.
+
+   - Joel Ramos Carro
+
+   - 3
+
+   - Lo mismo que en los anteriores apartados, no ha tenido una comunicación eficiente con el resto del equipo lo que ha provocado tener que dar marcha atrás en el flujo de trabajo y retrasar ciertas tareas ya planificadas.
+
+## Retrospectiva de la semana 2
+
+  a) ¿Qué ha sido lo mejor de la práctica? Solventar entre todos situaciones de riesgo debido a una mala comunicación a la hora de repartir el trabajo, especificar las tareas de cada uno de los miembros del equipo...
+  
+  b) ¿Qué fue lo peor? Tener que solucionar varios problemas en poco tiempo debido a malentendidos entre los integrantes del equipo lo que ha generado cierto estrés y miedo por no poder entregar la práctica a tiempo. Finalmente, esto se ha solventado correctamente.
+
+  c) ¿Cuál fue el mejor momento de cada semana durante el trabajo del
+     equipo? Esta semana no hay ningún momento destacable, a mayores de algún perfeccionamiento en el diseño.
+
+  d) ¿Cuál ha sido el peor? La comunicación en los últimos momentos del flujo de trabajo ha llevado a confusiones y errores en la implementación de las traducciones.
+
+  e) ¿Qué has aprendido? Sobretodo estamos aprendiendo que la organización y coordinación del trabajo en equipo es muy importante para trabajar en un buen ambiente. También consensuar las diferentes opiniones que puede tener cada integrante sobre cualquier tema o problema a resolver relacionado con la práctica.
+
+  f) ¿Qué necesitáis conservar -como equipo- para las próximas semanas? La organización y buena distribución del trabajo para que todos podamos contribuir y aportar nuestras ideas.
+
+  g) ¿Qué tenéis que mejorar -como equipo- para las próximas semanas? No olvidarnos de que la comunicación es fundamental para que el flujo de trabajo no se vea afectado y todo siga su curso como era esperado; y si se produce algún problema, ponernos todos de acuerdo para solventarlo en el menor tiempo posible y con el menor costo.
+
+  h) ¿Cómo se relaciona ESTE contenido con otros del curso y con tu
+     titulación? Quizá la internacionalización no sabríamos encasillarla con precisión en algún contenido dado en la titulación. Aún así, podemos destacar que la internacionalización es fundamental para poder ampliar el número de usuarias que pueda disfrutar de la aplicación independientemente del idioma que hablen.
