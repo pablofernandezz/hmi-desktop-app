@@ -225,3 +225,39 @@ Informe del Curador-Traductor
 *   **5. Asistentes de IA:**
     *   **Descripción:** Herramientas de IA conversacional utilizadas para consultas específicas y depuración.
     *   **Aplicación práctica:** Ha sido un apoyo fundamental para entender la interacción entre `threading` y `GLib.idle_add`, proporcionando ejemplos de esqueleto que luego adaptamos. También se usó para resolver dudas concretas sobre cómo deshabilitar un `Gtk.CheckButton` (`.set_sensitive(False)`) o añadirle un `tooltip` para mejorar la UX en la ventana de edición de gastos.
+
+
+## Objetivos de aprendizaje de la semana 3
+
+*   **Concepto:** Internacionalización (i18n) y Localización (l10n)
+    *   **Recursos identificados:**
+        *   Documentación oficial de Python sobre el módulo `gettext`.
+        *   Documentación oficial de Python sobre el módulo `locale`.
+
+*   **Herramienta:** GNU gettext (herramientas de línea de comandos)
+    *   **Recursos identificados:**
+        *   Tutoriales sobre los comandos `msgfmt` (para compilar traducciones).
+        *   Archivos de traducción (`.po`, `.mo`).
+
+*   **Concepto:** Formateo de datos dependiente de la localización
+    *   **Recursos identificados:**
+        *   Documentación sobre las directivas de formateo de fechas de Python (`strftime`).
+        *   Guías sobre el uso de `locale.currency` para la representación de valores monetarios.
+
+## Recursos empleados en la semana 3
+
+*   **1. Documentación del módulo `gettext` de Python:**
+    *   **Descripción:** Es la documentación oficial que explica el framework estándar de Python para la internacionalización. Detalla cómo marcar cadenas de texto para su traducción, cómo configurar el "dominio" de la aplicación y cómo cargar los catálogos de mensajes compilados.
+    *   **Aplicación práctica:** Ha sido el pilar de la tarea. Siguiendo esta guía, hemos modificado el `main.py` para inicializar el sistema `gettext`, definiendo el dominio (`APP_NAME = "splitwithme"`) y el directorio de traducciones (`LOCALE_DIR`). Crucialmente, hemos importado el alias `_ = gettext.gettext` en `view.py` y hemos envuelto todas las cadenas de texto visibles para el usuario (etiquetas, títulos de botones, mensajes de error) con la función `_()`, como en `_("Realizar Aporte")`, para que puedan ser traducidas.
+
+*   **2. Documentación del módulo `locale` de Python:**
+    *   **Descripción:** Recurso que explica cómo interactuar con la base de datos de localización del sistema operativo. Permite adaptar el formato de números, fechas, monedas y otros valores a las convenciones del país o región del usuario.
+    *   **Aplicación práctica:** Lo hemos utilizado para dos fines principales. Primero, en `main.py`, la llamada a `locale.setlocale(locale.LC_ALL, '')` configura la aplicación para que utilice la configuración regional del sistema. Segundo, en `view.py`, hemos creado dos funciones de ayuda: `format_currency`, que usa `locale.currency()` para mostrar los importes con el símbolo y separadores correctos, y `format_date`, que usa `strftime("%x")` para mostrar las fechas en el formato local estándar (ej. DD/MM/AAAA).
+
+*   **3. Archivos de traducción (`.po`, `.mo`) y la herramienta `msgfmt`:**
+    *   **Descripción:** Los archivos `.po` son ficheros de texto plano legibles por humanos donde se escriben las traducciones. La herramienta `msgfmt` es un programa de línea de comandos que compila estos archivos `.po` en archivos binarios optimizados `.mo`, que son los que la aplicación utiliza en tiempo de ejecución.
+    *   **Aplicación práctica:** Hemos creado la estructura de directorios `locale/gl_ES/LC_MESSAGES/`. Dentro, hemos editado el archivo `splitwithme.po` para añadir las traducciones al gallego. El paso final y fundamental ha sido usar el comando `msgfmt` en la terminal para compilar el `.po` y generar el archivo `splitwithme.mo`, permitiendo que la aplicación cargara nuestras traducciones al ejecutarse con el `locale` gallego.
+
+*   **4. Asistentes de IA:**
+    *   **Descripción:** Herramientas de IA conversacional utilizadas para consultas sobre la configuración del sistema y la depuración de errores específicos.
+    *   **Aplicación práctica:** Han sido un recurso clave para solucionar el error `locale.Error: unsupported locale setting`. El asistente nos guio para entender que el problema no estaba en el código, sino en que el `locale` `gl_ES.UTF-8` no estaba generado en el sistema operativo de la máquina virtual. Nos proporcionó los comandos exactos (`sudo nano /etc/locale.gen` y `sudo locale-gen`) para solucionar el problema, lo que fue indispensable para poder probar la funcionalidad de internacionalización.
