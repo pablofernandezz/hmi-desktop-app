@@ -151,3 +151,66 @@ Al cierre de la semana 2, el repositorio ha sido actualizado para cumplir con to
     *   La creación de gastos permite asignar amigos en un solo paso para el usuario.
     *   La funcionalidad de realizar aportes está completamente implementada.
     *   La arquitectura de la aplicación ha sido corregida y mejorada.
+
+
+---
+
+## Registro de tareas llevadas a cabo durante la semana 3
+
+---
+
+#### **Tarea 9: Internacionalización de Cadenas de Texto (i18n)**
+
+*   **Descripción de la tarea:** Preparamos la aplicación para soportar diferentes idiomas. Utilizamos la librería `gettext` de Python para marcar todos los textos visibles para el usuario en el fichero `view.py`. Creamos una función de ayuda `_()` para simplificar el marcado de textos. Además, configuramos el fichero `main.py` para inicializar `gettext`, definiendo el dominio de la aplicación (`splitwithme`) y la ubicación del directorio `locale`.
+*   **Asignación de responsables:** Pablo Fernández Martí.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** Tuvimos un problema al generar los archivos `.po`, no se registraban todos los textos correctamente, con la ayuda de la IA Deepseek anlizó todo el código de view.py y nos dió las cadena de texto que no habían sido generadas automáticamnete, ahorrándonos mucho trabajo manual.
+
+---
+
+#### **Tarea 10: Localización a Gallego e Inglés (l10n)**
+
+*   **Descripción de la tarea:** Para validar la internacionalización, localizamos la aplicación a dos nuevos idiomas: Gallego (gl_ES) e Inglés (en_GB). Utilizamos las herramientas (`xgettext`, `msginit`, `msgfmt`) para crear la estructura de directorios `locale`, generar los ficheros de plantilla (`.pot`), inicializar los catálogos de mensajes (`.po`) y compilarlos a su formato binario (`.mo`). Finalmente realizamos las traducciones correspondientes en cada fichero `.po`.
+*   **Asignación de responsables:** Traducción al Gallego: Nicolás Domínguez Souto, Traducción al Inglés: Joel Ramos Carro.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** No se presentaron conflictos.
+
+---
+
+#### **Tarea 11: Internacionalización de Formatos (Moneda y Fechas)**
+
+*   **Descripción de la tarea:** Utilizamos la librería `locale` de Python para que la aplicación mostrara las divisas y las fechas en el formato correspondiente a la configuración regional del usuario. Configuramos `locale.setlocale(locale.LC_ALL, '')` en `main.py` para que la aplicación adopte la configuración del sistema. Creamos las funciones de ayuda en `view.py` (`format_currency`, `format_date`) para encapsular esta lógica y aplicarla de forma consistente en toda la interfaz.
+*   **Asignación de responsables:** Tarea conjunta del equipo de desarrollo.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** No se presentaron conflictos.
+
+---
+
+#### **Tarea 12: Actualización de Documentación**
+
+*   **Descripción de la tarea:** También tuvimos que actualizar la documentación del proyecto para reflejar todos los cambios implementados durante la tarea. Esto incluyó la actualización de los wireframes en el `diseño-iu.pdf` para mostrar la nueva interfaz con `Gtk.Revealer` y la actualización de los diagramas de secuencia en `diseño_sw.md` para reducir el número de diagramas.
+*   **Asignación de responsables:** Tarea conjunta del equipo de desarrollo.
+*   **Estado de completud:** **100% Completado**.
+*   **Conflictos, desviaciones, etc.:** Tarea realizada en paralelo sin conflictos.
+
+---
+
+## Estado del repositorio en la semana 3
+
+Al cierre de la semana 3, el repositorio contiene la versión final de la aplicación, cumpliendo con todos los requisitos de las tres tareas de la práctica.
+
+*   **Principales Cambios en el Código:**
+    *   **`main.py`:** Añadimos la configuración inicial de `gettext` y `locale`.
+    *   **`view.py`:** Todas las cadenas de texto fueron marcadas para traducción con `_()`. Todas las fechas y cantidades monetarias se formatean usando las funciones `format_date` y `format_currency`.
+    *   **Nueva Estructura de Directorios:** Creamos el directorio `locale` con los ficheros `.pot`, `.po` y `.mo` para los idiomas `es`, `gl` y `en`.
+
+*   **Artefactos Finales:**
+    *   **Código Fuente (`/src`)**: Versión final, concurrente y completamente internacionalizada.
+    *   **Traducciones (`/locale`)**: Catálogos de mensajes para castellano, gallego e inglés.
+    *   **Documentación (`diseño-iu.pdf`, `diseño_sw.md`)**: Actualizada para reflejar el estado final de la aplicación.
+
+*   **Resumen de Funcionalidades Finales:**
+    *   La aplicación se muestra en el idioma del sistema (castellano, gallego o inglés).
+    *   Las fechas y monedas se formatean según la configuración regional del sistema.
+    *   Se mantienen todas las funcionalidades de las tareas anteriores, como la concurrencia y el manejo de errores.
+    *   La experiencia de usuario ha sido mejorada gracias a la refactorización de la interfaz.
