@@ -40,7 +40,7 @@ msgstr "Amigo:"
 #: src/view.py:47
 #, python-brace-format
 msgid "{name} (debe {deuda})"
-msgstr "{name} (debe {débeda})"
+msgstr "{name} (debe {debeda})"
 
 #: src/view.py:51
 msgid "Cantidad:"
@@ -94,7 +94,7 @@ msgstr ""
 
 #: src/view.py:371
 msgid "¿Estás seguro de que quieres eliminar este gasto?"
-msgstr "Estás seguro de que queres eliminar este gasto?"
+msgstr "Estas seguro de que queres eliminar este gasto?"
 
 #: src/view.py:507
 msgid "Fecha:"
@@ -124,7 +124,7 @@ msgstr "Gardar cambios"
 
 #: src/view.py:606
 msgid "Ningún amigo participa en este gasto."
-msgstr "Ningún amigo participa neste gasto."
+msgstr "Nengun amigo participa neste gasto."
 
 #: src/view.py:610
 #, python-brace-format
@@ -177,7 +177,7 @@ msgstr "Gastos"
 
 #: src/view.py:616
 msgid "Información"
-msgstr "Información"
+msgstr "Informacion"
 
 #: src/view.py:616
 msgid "Aportes"
