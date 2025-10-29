@@ -102,7 +102,7 @@ class Presenter:
             }
             success = self.modelo.update_gasto(gasto_id, datos_basicos)
             
-            self.vista.run_on_ui_thread(self.vista.reload_data_or_error, success, gasto_id=gasto_id)
+            self.vista.run_on_ui_thread(self.vista.reload_data_or_error, success, gasto_id)
 
         self.vista.show_row_loading(gasto_id, True)
         thread = threading.Thread(target=worker)
