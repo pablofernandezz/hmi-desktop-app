@@ -1,77 +1,60 @@
-# Curso 25/26. Práctica 1. Interfaces gráficas para aplicaciones de escritorio
+# 💸 SplitWithMe - Cliente de Escritorio (HMI)
 
-![Image of the assigment](social-image.png)
+![Estado del proyecto](https://img.shields.io/badge/Estado-Completado-success)
+![Contexto Académico](https://img.shields.io/badge/Contexto-UDC_FIC-blue)
+![Asignatura](https://img.shields.io/badge/Asignatura-IPM-orange)
 
-_Repositorio dedicado al desarrollo de la primera práctica de equipo
-de IPM_
+Aplicación de escritorio desarrollada para la gestión y división de gastos compartidos, permitiendo a los usuarios registrar deudas y liquidar balances de forma intuitiva.
 
+Este repositorio contiene exclusivamente el **Cliente de Escritorio**. Puedes consultar la versión web de este mismo sistema en el siguiente enlace:
+👉 **[SplitWithMe - Cliente Web](https://github.com/pablofernandezz/hmi-web-app)**
 
-La práctica consiste en el desarrollo de una aplicación de escritorio
-con su _interface gráfica_.
+---
 
-Este repositorio contiene:
+## 🛠️ Tecnologías Utilizadas
 
-  - Un documento que describe los _roles_ a desempeñar en el desarrollo
-    de la práctica.
-    
-  - Un enunciado que describe el trabajo a realizar en el desarrollo
-    de la práctica.
-    
-  - Un conjunto de rúbricas válidas tanto para la evaluación como para
-    la autoevaluación del trabajo realizado.
+* **Lenguaje:** Python
+* **Interfaz Gráfica:** GTK 4
+* **Comunicación:** Peticiones HTTP a API RESTful
 
-> :warning: No conocer el contenido de este repositorio, README,
-> enunciado, roles, ... conllevará una calificación de cero puntos.
+## 🏗️ Arquitectura del Sistema
 
+Este proyecto sigue una arquitectura cliente-servidor. Este repositorio actúa como cliente de escritorio y consume los servicios de una API externa. La API maneja toda la lógica de negocio (usuarios, grupos, balances), mientras que este cliente se enfoca en proporcionar una experiencia de usuario fluida y nativa en el sistema operativo.
 
-## Miembros del equipo:
+## ⚙️ Instalación y Despliegue Local
 
-- Fernández Martí Pablo : PabloFernandezMarti : pablo.fernandez@udc.es : administrador
-- Domínguez Souto Nicolás : nikkodominguez : nicolas.dominguez@udc.es : curador
-- Ramos Carro Joel : joelramos05 : joel.ramosc@udc.es : analista
+Para ejecutar este proyecto en tu máquina local, es **necesario** tener la API backend en funcionamiento primero.
 
+### 1. Levantar la API Backend (Dependencia Externa)
+La API requerida es `splitwithme` y debe ejecutarse localmente:
+1. Clona el repositorio de la API: 
+   `git clone https://github.com/nbarreira/splitwithme`
+2. Sigue las instrucciones del `README.md` de ese repositorio para arrancar el servidor local.
 
-## Pasos para realizar la práctica
+### 2. Ejecutar el Cliente de Escritorio
+Con la API respondiendo en local, puedes levantar la interfaz gráfica:
 
-1. Si estás leyendo este _README_ es porque has creado el repositorio
-   correspondiente desde el enlace de _github classroom_.
-   
-   Asegurate de esta punto sea cierto.
-	 
-2. Asigna los roles a cada miembro del equipo.
+1. Clona este repositorio:
+```bash
+   git clone [https://github.com/pablofernandezz/hmi-desktop-app.git](https://github.com/pablofernandezz/hmi-desktop-app.git)
+   cd hmi-desktop-app
+```
+2. Instala las dependencias necesarias:
+```bash
+   pip install -r requirements.txt
+```
+3. Ejecuta la aplicación principal:
+```bash
+   python main.py
+```
+🎓 Contexto Académico y Equipo
 
-   Sigue las instrucciones que se encuentran en el fichero
-   [roles.md](roles.md).
-   
-3. Cubre la sección "Miembros del equipo" de este mismo fichero.
+Este proyecto fue desarrollado de forma colaborativa como parte de la asignatura de Interacción Persona-Máquina (IPM) en la Facultade de Informática da Coruña (FIC - UDC). El objetivo principal fue aplicar los principios de usabilidad, diseño de interfaces y experiencia de usuario.
 
-   Siguie el formato de ejemplo.
-   
-4. Lee y comprende el enunciado de la práctica.
+Desarrollado por:
 
-   El enunciado está descrito en el fichero
-   [enunciado.md](enunciado.md).
+    Pablo Fernández Martí
 
-5. Lee y comprende las rúbricas de la práctica.
+    Joel Ramos Carro
 
-   Las rúbricas están disponibles en el fichero
-   [rubricas.md](rubricas.md).
-
-6. Planifica el trabajo.
-
-6. Realiza la tarea 1.
-
-8. Presenta la tarea 1 y realiza las correcciones indicadas.
-
-9. Realiza la tarea 2.
-
-10. Presenta la tarea 2 y realiza las correcciones indicadas.
-
-11. Realizar la tarea 3.
-
-12. Presenta la tarea 3 y realiza las correcciones indicadas.
-
-13. Revisa el contenido del repositorio en github.
-
-14. Presenta la práctica una vez finializada.
- 
+    Nicolás Domínguez Souto
