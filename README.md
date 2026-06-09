@@ -53,7 +53,7 @@ Este proyecto fue desarrollado de forma colaborativa como parte de la asignatura
 
 Desarrollado por:
 
-    Pablo Fernández Martí
+    Pablo Fernández Martí LinkedIn: www.linkedin.com/in/pablo-fernandez-marti-526320415
 
     Joel Ramos Carro
 
